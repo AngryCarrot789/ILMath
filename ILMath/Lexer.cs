@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 using ILMath.Data;
 
 namespace ILMath;
@@ -14,9 +15,14 @@ public class Lexer {
 
     private readonly string input;
     private int index;
+    private readonly ParsingContext ctx;
 
-    public Lexer(string input) {
+    public Lexer(string input) : this(input, default) {
+    }
+
+    public Lexer(string input, ParsingContext parsingContext) {
         this.input = input;
+        this.ctx = parsingContext;
         this.Consume(TokenType.None);
     }
 
@@ -83,9 +89,9 @@ public class Lexer {
     private Token NextNonSymbolToken() {
         char currentChar = this.input[this.index];
 
-        // If it is a number, read the whole number
-        if (char.IsDigit(currentChar))
-            return this.NextNumber();
+        // If it is a literal, read the whole number
+        if (this.CanParseNextLiteralFromChar(currentChar))
+            return this.NextLiteral();
 
         // If it is a letter, read the whole identifier
         if (IsIdentifierChar(currentChar))
@@ -108,37 +114,58 @@ public class Lexer {
         return new Token(TokenType.Identifier, builder.ToString());
     }
 
-    private static bool IsIdentifierChar(char c) {
-        switch (c) {
+    private Token NextLiteral() {
+        StringBuilder builder = new StringBuilder();
+        char ch = this.input[this.index++];
+        builder.Append(ch); // append the first literal char
+
+        if (this.index < this.input.Length && ((ch = this.input[this.index]) == 'x' || ch == 'X' || ch == 'b' || ch == 'B')) {
+            // we found a hex or binary prefix, so skip over it
+            builder.Append(ch);
+            this.index++;
+        }
+
+        // Read the whole number
+        while (this.index < this.input.Length && ((ch = this.input[this.index]) == '_' || char.IsDigit(ch) || IsHexChar(ch))) {
+            if (ch != '_') // allow separating sections of number with underscore
+                builder.Append(ch);
+            this.index++;
+        }
+
+        // If we found a dot, read the decimal part. If we encounter hex chars, then the parse will fail later on
+        if (this.index < this.input.Length && (ch = this.input[this.index]) == '.') {
+            builder.Append(ch);
+            this.index++;
+
+            while (this.index < this.input.Length && char.IsDigit(ch = this.input[this.index])) {
+                builder.Append(ch);
+                this.index++;
+            }
+        }
+
+        return new Token(TokenType.Literal, builder.ToString());
+    }
+
+    // Do not use for checking if a char is valid for a number,
+    // only use for checking if the next char can be the start of a literal
+    private bool CanParseNextLiteralFromChar(char ch) {
+        if (char.IsDigit(ch))
+            return true;
+        if (this.ctx.DefaultIntegerParseMode == IntegerParseMode.Hexadecimal)
+            return IsHexChar(ch);
+        return false;
+    }
+
+    private static bool IsIdentifierChar(char ch) {
+        switch (ch) {
             case '_':
             case '@':
             case '$':
             case '#':
                 return true;
-            default:  return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || char.IsDigit(c);
+            default: return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || char.IsDigit(ch);
         }
     }
 
-    private Token NextNumber() {
-        StringBuilder builder = new StringBuilder();
-
-        // Read the whole number
-        while (this.index < this.input.Length && char.IsDigit(this.input[this.index])) {
-            builder.Append(this.input[this.index]);
-            this.index++;
-        }
-
-        // If we found a dot, read the decimal part
-        if (this.index < this.input.Length && this.input[this.index] == '.') {
-            builder.Append(this.input[this.index]);
-            this.index++;
-
-            while (this.index < this.input.Length && char.IsDigit(this.input[this.index])) {
-                builder.Append(this.input[this.index]);
-                this.index++;
-            }
-        }
-
-        return new Token(TokenType.Number, builder.ToString());
-    }
+    private static bool IsHexChar(char ch) => (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
 }

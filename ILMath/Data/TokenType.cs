@@ -22,7 +22,7 @@ public enum TokenType {
     BoolNot,          // !
     
     Identifier,       // 
-    Number,           // 
+    Literal,          // 
     EndOfInput,       // 
     Unknown           // 
 }

@@ -16,8 +16,20 @@ public static class MathEvaluation {
     /// <param name="method">The compilation method.</param>
     /// <returns>The evaluator.</returns>
     public static Evaluator<T> CompileExpression<T>(string functionName, string expression, CompilationMethod method = CompilationMethod.IntermediateLanguage) where T : unmanaged, INumber<T> {
+        return CompileExpression<T>(functionName, expression, default, method);
+    }
+    
+    /// <summary>
+    /// Compiles an expression to a function.
+    /// </summary>
+    /// <param name="functionName">The function name.</param>
+    /// <param name="expression">The math expression.</param>
+    /// <param name="parsingContext">Additional information about the parsing process.</param>
+    /// <param name="method">The compilation method.</param>
+    /// <returns>The evaluator.</returns>
+    public static Evaluator<T> CompileExpression<T>(string functionName, string expression, ParsingContext parsingContext, CompilationMethod method = CompilationMethod.IntermediateLanguage) where T : unmanaged, INumber<T> {
         Lexer lexer = new Lexer(expression);
-        Parser<T> parser = new Parser<T>(lexer);
+        Parser<T> parser = new Parser<T>(lexer, parsingContext);
         INode node = parser.Parse();
         ICompiler<T> compiler = CreateCompiler<T>(method);
         return compiler.Compile(functionName, node);

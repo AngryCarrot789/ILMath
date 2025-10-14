@@ -97,6 +97,19 @@ public class EvaluationTestInt {
     }
 
     [TestMethod]
+    public void TestHexAndBinaryParsing() {
+        RunTestI32("0x0101", 0x0101);
+        RunTestI32("0b0101", 0b0101);
+        RunTestI32("0X7FFFFFFF", 0X7FFFFFFF);
+        RunTestI32("0b10000000000000000000000000000000", unchecked((int) 0b10000000000000000000000000000000));
+        
+        RunTestI32("0101", 0x0101, IntegerParseMode.Hexadecimal);
+        RunTestI32("7FFFFFFF", 0X7FFFFFFF, IntegerParseMode.Hexadecimal);
+        RunTestI32("0101", 0b0101, IntegerParseMode.Binary);
+        RunTestI32("10000000000000000000000000000000", unchecked((int) 0b10000000000000000000000000000000), IntegerParseMode.Binary);
+    }
+
+    [TestMethod]
     public void TestTabsAndWhiteSpaces() {
         RunTestI32("  1 +   2  * 3  ", 1 + 2 * 3);
         RunTestI32("\t(4+5\t )*2", (4 + 5) * 2);
@@ -106,9 +119,9 @@ public class EvaluationTestInt {
         CompilationMethod.ExpressionTree, CompilationMethod.Functional, CompilationMethod.IntermediateLanguage
     };
 
-    private static void RunTestI32(string expression, int expected) {
+    private static void RunTestI32(string expression, int expected, IntegerParseMode mode = IntegerParseMode.Integer) {
         foreach (CompilationMethod method in Methods) {
-            Evaluator<int> compiled = MathEvaluation.CompileExpression<int>(string.Empty, expression, method);
+            Evaluator<int> compiled = MathEvaluation.CompileExpression<int>(string.Empty, expression, new ParsingContext() { DefaultIntegerParseMode = mode }, method);
             EvaluationContext<int> context = EvaluationContexts.CreateForInteger<int>();
             context.RegisterFunction("f", static p => p[0] * 2);
 
