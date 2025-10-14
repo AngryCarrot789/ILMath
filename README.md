@@ -1,53 +1,49 @@
-# ⚡ ILMath
+# ILMath
 > ILMath is a hyper-fast and flexible math expression parser for C# and .NET.
 
 ## Features
-- ⚡ Compiles math expressions to IL code!
-- 🔃 Compiled expressions can be reused many times!
-- 📦 Supports many math functions and constants (including custom)!
-- 🔥 Extremely fast (after compilation)!
-- 📚 Easy to use!
-- **New!** ⚙️ Now supports NativeAOT! (disables dynamic code generation)
+- Compiles math expressions to IL code
+- Compiled expressions can be reused many times
+- Supports many math functions and constants (including custom)
+- Extremely fast (after compilation)
+- Easy to use
+- Supports NativeAOT (disables dynamic code generation)
 
-## Installation
-ILMath is available as a [NuGet package](https://www.nuget.org/packages/ILMath/).
 
-## Usage
-```csharp
-using ILMath;
+This fork is a major rewrite which adds extra optimizations and, mainly, adds support for more 
+than the `double` type. Current types supported:
+- `int`
+- `uint`
+- `long`
+- `ulong`
+- `float`
+- `double`
 
-// Create a new evaluation context
-var context = EvaluationContext.CreateDefault();
-
-// Register a custom function
-context.RegisterFunction("myFunction", parameters => parameters[0] + parameters[1]);
-
-// Register a custom variable
-context.RegisterVariable("myVariable", 5);
-
-// Create a new evaluator with name "MyFunction" and expression "myFunction(2, myVariable) * 3"
-var evaluator = MathEvaluation.CompileExpression("MyFunction", "myFunction(2, myVariable) * 3");
-
-// Evaluate the expression
-var result = evaluator.Invoke(context); // 21
-```
+All three compiler methods still work as normal
 
 ## Operators
-ILMath supports the following operators.
+This fork of ILMath supports the following operators:
+> `IN` stands for Integer Number (including int, uint, long, ulong). `FPN` stands for floating point number (`float`, `double`). `Decimal` is not yet supported. 
 
-| Operator | Description    |
-|----------|----------------|
-| `+`      | Addition       |
-| `-`      | Subtraction    |
-| `*`      | Multiplication |
-| `/`      | Division       |
-| `%`      | Modulo         |
-| `^`      | Exponentiation |
+| Operator | Description        | Supported Types |
+|----------|--------------------|-----------------|
+| `+`      | Addition           | All INs & FPNs  |
+| `-`      | Subtraction        | All INs & FPNs  |
+| `*`      | Multiplication     | All INs & FPNs  |
+| `/`      | Division           | All INs & FPNs  |
+| `%`      | Modulo             | All INs & FPNs  |
+| `&`      | AND                | Integers only   |
+| ` `      | OR (vertical line) | Integers only   |
+| `^`      | XOR                | Integers only   |
+| `~`      | NOT (O's C)        | Integers only   |
+| `!`      | Bool NOT           | Integers only   |
+| `<<`     | LShift             | Integers only   |
+| `>>`     | RShift             | Integers only   |
 
 ## Built-ins
-ILMath supports many built-in variables and functions. The following table lists all built-in variables and functions.
+ILMath supports many built-in variables and functions. 
 
-### Variables
+### Floating Point Variables
 | Variable   | Description                                           |
 |------------|-------------------------------------------------------|
 | `pi`       | The ratio of a circle's circumference to its diameter |
