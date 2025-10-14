@@ -8,9 +8,9 @@ public static class Util<T> {
     public static bool IsFP { get; }
     public static bool IsUN { get; }
     public static bool Is64 { get; }
-    public static MethodInfo? LeftShift { get; }
-    public static MethodInfo? RightShift { get; }
-    public static MethodInfo? Negate { get; }
+    public static MethodInfo? LeftShiftMethod { get; }
+    public static MethodInfo? RightShiftMethod { get; }
+    public static MethodInfo? NegateMethod { get; }
 
     static Util() {
         if (typeof(T) == typeof(int)) {
@@ -19,22 +19,22 @@ public static class Util<T> {
 
         if (typeof(T) == typeof(uint)) {
             IsUN = true;
-            Negate = Util.NegateU32;
+            NegateMethod = Util.NegateU32;
             return;
         }
 
         if (typeof(T) == typeof(long)) {
             Is64 = true;
-            LeftShift = Util.LShiftL64;
-            RightShift = Util.RShiftL64;
+            LeftShiftMethod = Util.LShiftL64;
+            RightShiftMethod = Util.RShiftL64;
             return;
         }
 
         if (typeof(T) == typeof(ulong)) {
             Is64 = true;
-            LeftShift = Util.LShiftUL64;
-            RightShift = Util.RShiftUL64;
-            Negate = Util.NegateU64;
+            LeftShiftMethod = Util.LShiftUL64;
+            RightShiftMethod = Util.RShiftUL64;
+            NegateMethod = Util.NegateU64;
             return;
         }
 

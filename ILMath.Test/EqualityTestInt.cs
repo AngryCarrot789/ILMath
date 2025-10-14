@@ -8,11 +8,11 @@ public class EqualityTestInt {
     public void TestMethod1() {
         OperatorNode expect = new OperatorNode(
             OperatorType.Plus,
-            new NumberNode<int>(2),
+            new LiteralNode<int>(2),
             new OperatorNode(
                 OperatorType.Multiplication,
-                new NumberNode<int>(1),
-                new NumberNode<int>(5)));
+                new LiteralNode<int>(1),
+                new LiteralNode<int>(5)));
         Assert.AreEqual(expect, CreateSyntaxTree("2 + 1 * 5"));
     }
 
@@ -29,7 +29,7 @@ public class EqualityTestInt {
                 new OperatorNode(
                     OperatorType.Division,
                     new VariableNode("pi"),
-                    new NumberNode<int>(2))
+                    new LiteralNode<int>(2))
             ]);
         Assert.AreNotEqual(expect, CreateSyntaxTree("sin(pi / 4)"));
     }
@@ -43,15 +43,15 @@ public class EqualityTestInt {
                     new OperatorNode(
                         OperatorType.Division,
                         new VariableNode("pi"),
-                        new NumberNode<int>(4))
+                        new LiteralNode<int>(4))
                 ]),
-            new NumberNode<int>(8));
+            new LiteralNode<int>(8));
         Assert.AreEqual(expect, CreateSyntaxTree("sin(pi / 4) * 8"));
     }
 
     [TestMethod]
     public void TestMethod5() {
-        NumberNode<int> expect = new NumberNode<int>(5);
+        LiteralNode<int> expect = new LiteralNode<int>(5);
         Assert.AreEqual(expect, CreateSyntaxTree("5"));
     }
 
@@ -59,8 +59,8 @@ public class EqualityTestInt {
     public void TestMethod6() {
         OperatorNode expect = new OperatorNode(
             OperatorType.Xor,
-            new NumberNode<int>(4),
-            new NumberNode<int>(7));
+            new LiteralNode<int>(4),
+            new LiteralNode<int>(7));
         Assert.AreEqual(expect, CreateSyntaxTree("4 ^ 7"));
     }
 
@@ -68,11 +68,11 @@ public class EqualityTestInt {
     public void TestMethod7() {
         OperatorNode expect = new OperatorNode(
             OperatorType.Xor,
-            new NumberNode<int>(4),
+            new LiteralNode<int>(4),
             new OperatorNode(
                 OperatorType.Plus,
-                new NumberNode<int>(7),
-                new NumberNode<int>(2)));
+                new LiteralNode<int>(7),
+                new LiteralNode<int>(2)));
         Assert.AreEqual(expect, CreateSyntaxTree("4 ^ (7 + 2)"));
     }
 

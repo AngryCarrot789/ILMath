@@ -12,6 +12,7 @@ public enum OperatorType {
     And,            // &
     Or,             // |
     OnesComplement, // ~
+    BoolNot,        // !
 }
 
 public static class OperatorTypeExtensions {
@@ -33,6 +34,7 @@ public static class OperatorTypeExtensions {
             case OperatorType.And:            return "&";
             case OperatorType.Or:             return "|";
             case OperatorType.OnesComplement: return "~";
+            case OperatorType.BoolNot:        return "!";
             default:                          throw new ArgumentOutOfRangeException(nameof(opType), opType, null);
         }
     }

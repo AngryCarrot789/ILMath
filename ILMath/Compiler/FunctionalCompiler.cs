@@ -16,31 +16,31 @@ public class FunctionalCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T
     /// <param name="tree">The syntax tree to compile.</param>
     /// <returns>The evaluator.</returns>
     public Evaluator<T> Compile(string name, INode tree) {
-        return this.CompileSyntaxTree(tree);
+        return CompileSyntaxTree(tree);
     }
 
-    private Evaluator<T> CompileSyntaxTree(INode rootNode) {
-        Evaluator<T> compiledRoot = this.CompileNode(rootNode);
+    private static Evaluator<T> CompileSyntaxTree(INode rootNode) {
+        Evaluator<T> compiledRoot = CompileNode(rootNode);
         return context => compiledRoot(context);
     }
 
-    private Evaluator<T> CompileNode(INode node) {
+    private static Evaluator<T> CompileNode(INode node) {
         return node switch {
-            OperatorNode expressionNode => this.CompileOperatorNode(expressionNode),
-            NumberNode<T> numberNode => CompileNumberNode(numberNode),
-            UnaryNode unaryNode => this.CompileUnaryNode(unaryNode),
+            OperatorNode expressionNode => CompileOperatorNode(expressionNode),
+            LiteralNode<T> numberNode => CompileNumberNode(numberNode),
+            UnaryNode unaryNode => CompileUnaryNode(unaryNode),
             VariableNode variableNode => CompileVariableNode(variableNode),
-            FunctionNode functionNode => this.CompileFunctionNode(functionNode),
+            FunctionNode functionNode => CompileFunctionNode(functionNode),
             _ => throw new CompilerException($"Unknown node type: {node.GetType()}")
         };
     }
 
-    private Evaluator<T> CompileOperatorNode(OperatorNode operatorNode) {
+    private static Evaluator<T> CompileOperatorNode(OperatorNode operatorNode) {
         INode left = operatorNode.Left;
         INode right = operatorNode.Right;
         OperatorType @operator = operatorNode.Operator;
-        Evaluator<T> compiledLeft = this.CompileNode(left);
-        Evaluator<T> compiledRight = this.CompileNode(right);
+        Evaluator<T> compiledLeft = CompileNode(left);
+        Evaluator<T> compiledRight = CompileNode(right);
         switch (@operator) {
             case OperatorType.Plus:           return context => compiledLeft(context) + compiledRight(context);
             case OperatorType.Minus:          return context => compiledLeft(context) - compiledRight(context);
@@ -62,17 +62,18 @@ public class FunctionalCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T
         throw new CompilerException($"Unknown operator: {@operator}");
     }
 
-    private static Evaluator<T> CompileNumberNode(NumberNode<T> numberNode) {
-        T value = numberNode.Value;
+    private static Evaluator<T> CompileNumberNode(LiteralNode<T> literalNode) {
+        T value = literalNode.Value;
         return _ => value;
     }
 
-    private Evaluator<T> CompileUnaryNode(UnaryNode unaryNode) {
-        Evaluator<T> compiledChild = this.CompileNode(unaryNode.Child);
+    private static Evaluator<T> CompileUnaryNode(UnaryNode unaryNode) {
+        Evaluator<T> compiledChild = CompileNode(unaryNode.Child);
         switch (unaryNode.Operator) {
             case OperatorType.Plus:           return context => compiledChild(context);
             case OperatorType.Minus:          return context => -compiledChild(context);
-            case OperatorType.OnesComplement: return context => Not(compiledChild(context));
+            case OperatorType.OnesComplement: return context => OnesComplement(compiledChild(context));
+            case OperatorType.BoolNot:        return context => Not(compiledChild(context));
         }
 
         throw new CompilerException($"Unknown unary operator: {unaryNode.Operator}");
@@ -83,9 +84,9 @@ public class FunctionalCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T
         return context => context.GetVariable(identifier);
     }
 
-    private Evaluator<T> CompileFunctionNode(FunctionNode functionNode) {
+    private static Evaluator<T> CompileFunctionNode(FunctionNode functionNode) {
         IReadOnlyList<INode> parameters = functionNode.Parameters;
-        Evaluator<T>[] compiledParameters = parameters.Select(this.CompileNode).ToArray();
+        Evaluator<T>[] compiledParameters = parameters.Select(CompileNode).ToArray();
         return context => {
             Span<T> values = stackalloc T[compiledParameters.Length];
             for (int i = 0; i < compiledParameters.Length; i++)
@@ -94,7 +95,7 @@ public class FunctionalCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T
         };
     }
 
-    private static T Not(T input) {
+    private static T OnesComplement(T input) {
         if (typeof(T) == typeof(int))
             return Operate1<int>(input, static x => ~x);
         if (typeof(T) == typeof(uint))
@@ -103,6 +104,18 @@ public class FunctionalCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T
             return Operate1<long>(input, static x => ~x);
         if (typeof(T) == typeof(ulong))
             return Operate1<ulong>(input, static x => ~x);
+        throw new EvaluationException($"Unknown type: {typeof(T)}");
+    }
+    
+    private static T Not(T input) {
+        if (typeof(T) == typeof(int))
+            return Operate1<int>(input, static x => x != 0 ? 0 : 1);
+        if (typeof(T) == typeof(uint))
+            return Operate1<uint>(input, static x => x != 0 ? 0U : 1U);
+        if (typeof(T) == typeof(long))
+            return Operate1<long>(input, static x => x != 0 ? 0U : 1U);
+        if (typeof(T) == typeof(ulong))
+            return Operate1<ulong>(input, static x => x != 0 ? 0U : 1U);
         throw new EvaluationException($"Unknown type: {typeof(T)}");
     }
 

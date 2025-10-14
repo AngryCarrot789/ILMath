@@ -7,20 +7,21 @@ using ILMath.SyntaxTree;
 namespace ILMath;
 
 internal static class Parser {
-    public static readonly Dictionary<TokenType, (int precedence, OperatorType opType)> Operators;
+    public static readonly Dictionary<TokenType, (int precedence, bool right, OperatorType opType)> Operators;
+    public const int UnaryPrecedence = 7;
 
     static Parser() {
-        Operators = new Dictionary<TokenType, (int precedence, OperatorType opType)> {
-            { TokenType.Or,             (1, OperatorType.Or) },
-            { TokenType.Xor,            (2, OperatorType.Xor) },
-            { TokenType.And,            (3, OperatorType.And) },
-            { TokenType.LShift,         (4, OperatorType.LShift) },
-            { TokenType.RShift,         (4, OperatorType.RShift) },
-            { TokenType.Plus,           (5, OperatorType.Plus) },
-            { TokenType.Minus,          (5, OperatorType.Minus) },
-            { TokenType.Multiplication, (6, OperatorType.Multiplication) },
-            { TokenType.Division,       (6, OperatorType.Division) },
-            { TokenType.Modulo,         (6, OperatorType.Modulo) }
+        Operators = new Dictionary<TokenType, (int precedence, bool right, OperatorType opType)> {
+            { TokenType.Or,             (1, false, OperatorType.Or) },
+            { TokenType.Xor,            (2, false, OperatorType.Xor) },
+            { TokenType.And,            (3, false, OperatorType.And) },
+            { TokenType.LShift,         (4, false, OperatorType.LShift) },
+            { TokenType.RShift,         (4, false, OperatorType.RShift) },
+            { TokenType.Plus,           (5, false, OperatorType.Plus) },
+            { TokenType.Minus,          (5, false, OperatorType.Minus) },
+            { TokenType.Multiplication, (6, false, OperatorType.Multiplication) },
+            { TokenType.Division,       (6, false, OperatorType.Division) },
+            { TokenType.Modulo,         (6, false, OperatorType.Modulo) },
         };
     }
 }
@@ -30,7 +31,6 @@ internal static class Parser {
 /// </summary>
 public class Parser<T> where T : unmanaged, INumber<T> {
     private readonly Lexer lexer;
-
 
     public Parser(Lexer lexer) {
         this.lexer = lexer;
@@ -44,9 +44,9 @@ public class Parser<T> where T : unmanaged, INumber<T> {
 
     private INode ParsePrecedence(int minPrecedence) {
         INode left = this.ParsePrimary();
-        while (Parser.Operators.TryGetValue(this.lexer.CurrentToken.Type, out (int precedence, OperatorType opType) opInfo) && opInfo.precedence >= minPrecedence) {
+        while (Parser.Operators.TryGetValue(this.lexer.CurrentToken.Type, out (int precedence, bool right, OperatorType opType) opInfo) && opInfo.precedence >= minPrecedence) {
             this.Consume(this.lexer.CurrentToken.Type);
-            left = new OperatorNode(opInfo.opType, left, this.ParsePrecedence(opInfo.precedence + 1));
+            left = new OperatorNode(opInfo.opType, left, this.ParsePrecedence(opInfo.right ? opInfo.precedence : (opInfo.precedence + 1)));
         }
 
         return left;
@@ -58,7 +58,7 @@ public class Parser<T> where T : unmanaged, INumber<T> {
                 Token numberToken = this.lexer.CurrentToken;
                 this.Consume(TokenType.Number);
                 Debug.Assert(numberToken.Value != null);
-                return new NumberNode<T>(T.Parse(numberToken.Value, null));
+                return new LiteralNode<T>(T.Parse(numberToken.Value, null));
 
             case TokenType.Identifier:
                 string name = this.lexer.CurrentToken.Value!;
@@ -81,14 +81,17 @@ public class Parser<T> where T : unmanaged, INumber<T> {
             case TokenType.Plus:
             case TokenType.Minus:
             case TokenType.OnesComplement:
+            case TokenType.BoolNot:
                 OperatorType unaryOp = this.lexer.CurrentToken.Type switch {
                     TokenType.Plus => OperatorType.Plus,
                     TokenType.Minus => OperatorType.Minus,
                     TokenType.OnesComplement => OperatorType.OnesComplement,
+                    TokenType.BoolNot => OperatorType.BoolNot,
                     _ => throw new ParserException("Unexpected unary operator")
                 };
+
                 this.Consume(this.lexer.CurrentToken.Type);
-                return new UnaryNode(unaryOp, this.ParsePrecedence(6)); // bind tightly
+                return new UnaryNode(unaryOp, this.ParsePrecedence(Parser.UnaryPrecedence));
 
             default: throw new ParserException($"Unexpected token: {this.lexer.CurrentToken}");
         }

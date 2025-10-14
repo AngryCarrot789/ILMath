@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using System.Xml.Schema;
 using ILMath.Data;
 
 namespace ILMath;
@@ -57,6 +56,7 @@ public class Lexer {
             case '&': token = new Token(TokenType.And); break;
             case '|': token = new Token(TokenType.Or); break;
             case '~': token = new Token(TokenType.OnesComplement); break;
+            case '!': token = new Token(TokenType.BoolNot); break;
             case '<': token = this.NextMultiCharToken('<', TokenType.LShift); break;
             case '>': token = this.NextMultiCharToken('>', TokenType.RShift); break;
             case '=': token = this.NextMultiCharToken('=', TokenType.Equals); break;

@@ -1,18 +1,30 @@
-﻿using System.Diagnostics;
+﻿namespace ILMath.SyntaxTree;
 
-namespace ILMath.SyntaxTree;
-
+/// <summary>
+/// Represents a function call node, containing any number of parameter nodes
+/// </summary>
 public class FunctionNode : INode {
+    private readonly List<INode> myNodeList;
+    
+    /// <summary>
+    /// The function name
+    /// </summary>
     public string Identifier { get; }
-    public IReadOnlyList<INode> Parameters { get; }
+
+    /// <summary>
+    /// The parameters of the function
+    /// </summary>
+    public IReadOnlyList<INode> Parameters => this.myNodeList;
+
+    int INode.ChildrenCount => this.Parameters.Count;
 
     public FunctionNode(string identifier, IEnumerable<INode> parameters) {
         this.Identifier = identifier;
-        this.Parameters = parameters.ToList();
+        this.myNodeList = parameters.ToList();
     }
 
-    public IEnumerable<INode> EnumerateChildren() {
-        return this.Parameters;
+    void INode.GetChildNodes(Span<INode> nodes) {
+        this.myNodeList.CopyTo(nodes);
     }
 
     public override string ToString() {
@@ -28,15 +40,14 @@ public class FunctionNode : INode {
     }
 
     public override bool Equals(object? obj) {
-        if (obj is not FunctionNode other)
-            return false;
-        if (this.Identifier != other.Identifier)
-            return false;
-        if (this.Parameters.Count != other.Parameters.Count)
-            return false;
-        bool equals = true;
-        for (int i = 0; i < this.Parameters.Count; i++)
-            equals &= this.Parameters[i].Equals(other.Parameters[i]);
-        return equals;
+        if (obj is FunctionNode other) {
+            if (this.Identifier != other.Identifier)
+                return false;
+            if (this.Parameters.Count != other.Parameters.Count)
+                return false;
+            return this.Parameters.SequenceEqual(other.Parameters, EqualityComparer<INode>.Default);
+        }
+
+        return false;
     }
 }

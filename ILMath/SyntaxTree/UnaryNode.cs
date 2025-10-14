@@ -1,16 +1,28 @@
 ﻿namespace ILMath.SyntaxTree;
 
+/// <summary>
+/// Represents a unary operation node
+/// </summary>
 public class UnaryNode : INode {
+    /// <summary>
+    /// Gets the operator
+    /// </summary>
     public OperatorType Operator { get; }
+    
+    /// <summary>
+    /// Gets the single node that this node operates upon
+    /// </summary>
     public INode Child { get; }
+
+    int INode.ChildrenCount => 1;
 
     public UnaryNode(OperatorType @operator, INode child) {
         this.Operator = @operator;
         this.Child = child;
     }
 
-    public IEnumerable<INode> EnumerateChildren() {
-        yield return this.Child;
+    void INode.GetChildNodes(Span<INode> nodes) {
+        nodes[0] = this.Child;
     }
 
     public override string ToString() {
@@ -25,8 +37,6 @@ public class UnaryNode : INode {
     }
 
     public override bool Equals(object? obj) {
-        if (obj is not UnaryNode other)
-            return false;
-        return this.Operator == other.Operator && this.Child.Equals(other.Child);
+        return obj is UnaryNode other && this.Operator == other.Operator && this.Child.Equals(other.Child);
     }
 }

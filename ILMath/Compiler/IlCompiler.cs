@@ -22,13 +22,15 @@ public class IlCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T> {
     /// ///
     /// <returns>The evaluator.</returns>
     public Evaluator<T> Compile(string name, INode tree) {
-        return this.CompileSyntaxTree(name, tree);
+        return CompileSyntaxTree(name, tree);
     }
 
-    private Evaluator<T> CompileSyntaxTree(string name, INode rootNode) {
+    private static Evaluator<T> CompileSyntaxTree(string name, INode rootNode) {
         // Calculate the maximum parameter stack size
+        ChildNodeList list = new ChildNodeList(new INode[16]);
+
         int maximumParameterStackSize = 0;
-        CalculateMaximumParameterStackSize(rootNode, 0, ref maximumParameterStackSize);
+        CalculateMaximumParameterStackSize(rootNode, 0, ref maximumParameterStackSize, ref list);
 
         // Create a new dynamic method
         DynamicMethod method = new DynamicMethod(name, typeof(T), [typeof(IEvaluationContext<T>)]);
@@ -50,7 +52,7 @@ public class IlCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T> {
         }
 
         // Compile the syntax tree into IL code
-        this.CompileNode(rootNode, il, new CompilationState(parameters, 0));
+        CompileNode(rootNode, il, new CompilationState(parameters, 0));
 
         // Return the value on the stack
         il.Emit(OpCodes.Ret);
@@ -59,28 +61,28 @@ public class IlCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T> {
         return (Evaluator<T>) method.CreateDelegate(typeof(Evaluator<T>));
     }
 
-    private void CompileNode(INode node, ILGenerator il, CompilationState state) {
+    private static void CompileNode(INode node, ILGenerator il, CompilationState state) {
         switch (node) {
-            case OperatorNode expressionNode: this.CompileOperatorNode(expressionNode, il, state); break;
-            case NumberNode<T> numberNode:    CompileNumberNode(numberNode, il); break;
-            case UnaryNode unaryNode:         this.CompileUnaryNode(unaryNode, il, state); break;
-            case VariableNode variableNode:   this.CompileVariableNode(variableNode, il); break;
-            case FunctionNode functionNode:   this.CompileFunctionNode(functionNode, il, state); break;
+            case OperatorNode expressionNode: CompileOperatorNode(expressionNode, il, state); break;
+            case LiteralNode<T> numberNode:   CompileNumberNode(numberNode, il); break;
+            case UnaryNode unaryNode:         CompileUnaryNode(unaryNode, il, state); break;
+            case VariableNode variableNode:   CompileVariableNode(variableNode, il); break;
+            case FunctionNode functionNode:   CompileFunctionNode(functionNode, il, state); break;
             default:                          throw new CompilerException($"Unknown node type: {node.GetType()}");
         }
     }
 
-    private void CompileOperatorNode(OperatorNode operatorNode, ILGenerator il, CompilationState state) {
+    private static void CompileOperatorNode(OperatorNode operatorNode, ILGenerator il, CompilationState state) {
         INode left = operatorNode.Left;
         INode right = operatorNode.Right;
         OperatorType @operator = operatorNode.Operator;
-        this.CompileNode(left, il, state);
-        this.CompileNode(right, il, state);
-        GenerateOperatorInstruction(@operator, il);
+        CompileNode(left, il, state);
+        CompileNode(right, il, state);
+        il.Emit(GetOpCodeForOperator(@operator));
     }
 
-    private static void CompileNumberNode(NumberNode<T> numberNode, ILGenerator il) {
-        T value = numberNode.Value;
+    private static void CompileNumberNode(LiteralNode<T> literalNode, ILGenerator il) {
+        T value = literalNode.Value;
         if (typeof(T) == typeof(int))
             il.Emit(OpCodes.Ldc_I4, Unsafe.As<T, int>(ref value));
         else if (typeof(T) == typeof(uint))
@@ -95,16 +97,19 @@ public class IlCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T> {
             il.Emit(OpCodes.Ldc_R8, Unsafe.As<T, double>(ref value));
     }
 
-    private void CompileUnaryNode(UnaryNode unaryNode, ILGenerator il, CompilationState state) {
-        this.CompileNode(unaryNode.Child, il, state);
-
+    private static void CompileUnaryNode(UnaryNode unaryNode, ILGenerator il, CompilationState state) {
+        CompileNode(unaryNode.Child, il, state);
         switch (unaryNode.Operator) {
             case OperatorType.Minus:          il.Emit(OpCodes.Neg); break;
             case OperatorType.OnesComplement: il.Emit(OpCodes.Not); break;
+            case OperatorType.BoolNot:
+                il.Emit(OpCodes.Ldc_I4_0);
+                il.Emit(OpCodes.Ceq); // (v == 0) ? 1 : 0
+                break;
         }
     }
 
-    private void CompileVariableNode(VariableNode variableNode, ILGenerator il) {
+    private static void CompileVariableNode(VariableNode variableNode, ILGenerator il) {
         // Load the context onto the stack
         il.Emit(OpCodes.Ldarg_0);
 
@@ -115,7 +120,7 @@ public class IlCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T> {
         il.Emit(OpCodes.Callvirt, typeof(IEvaluationContext<T>).GetMethod(nameof(IEvaluationContext<T>.GetVariable))!);
     }
 
-    private void CompileFunctionNode(FunctionNode functionNode, ILGenerator il, CompilationState state) {
+    private static void CompileFunctionNode(FunctionNode functionNode, ILGenerator il, CompilationState state) {
         // Load the context onto the stack
         il.Emit(OpCodes.Ldarg_0);
 
@@ -142,7 +147,7 @@ public class IlCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T> {
                 }
 
                 // Compile the parameter node
-                this.CompileNode(functionNode.Parameters[i], il, state with { StackLocation = offset });
+                CompileNode(functionNode.Parameters[i], il, state with { StackLocation = offset });
 
                 // Store the parameter value in the array
                 if (typeof(T) == typeof(double))
@@ -183,11 +188,7 @@ public class IlCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T> {
         il.Emit(OpCodes.Callvirt, typeof(IEvaluationContext<T>).GetMethod(nameof(IEvaluationContext<T>.CallFunction))!);
     }
 
-    private static void GenerateOperatorInstruction(OperatorType operatorType, ILGenerator il) {
-        il.Emit(GetOpCode(operatorType));
-    }
-
-    private static OpCode GetOpCode(OperatorType operatorType) {
+    private static OpCode GetOpCodeForOperator(OperatorType operatorType) {
         switch (operatorType) {
             case OperatorType.Plus:           return OpCodes.Add;
             case OperatorType.Minus:          return OpCodes.Sub;
@@ -203,24 +204,47 @@ public class IlCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T> {
                 case OperatorType.RShift:         return Util<T>.IsUN ? OpCodes.Shr_Un : OpCodes.Shr;
                 case OperatorType.And:            return OpCodes.And;
                 case OperatorType.Or:             return OpCodes.Or;
-                case OperatorType.OnesComplement: return OpCodes.Not;
             }
         }
 
-        throw new CompilerException($"Unknown operator type '{operatorType}'");
+        throw new CompilerException($"Unknown operator type '{operatorType}' for {nameof(OperatorNode)}");
     }
 
-    private static void CalculateMaximumParameterStackSize(INode node, int stackLocation, ref int maximumStackSize) {
+    private static void CalculateMaximumParameterStackSize(INode node, int stackLocation, ref int maximumStackSize, ref ChildNodeList list) {
         if (node is FunctionNode functionNode) {
             // For each child, increment the stack size
             foreach (INode child in functionNode.Parameters) {
                 stackLocation++;
-                CalculateMaximumParameterStackSize(child, stackLocation, ref maximumStackSize);
+                CalculateMaximumParameterStackSize(child, stackLocation, ref maximumStackSize, ref list);
                 maximumStackSize = Math.Max(maximumStackSize, stackLocation + 1);
             }
         }
-        else
-            foreach (INode child in node.EnumerateChildren())
-                CalculateMaximumParameterStackSize(child, stackLocation, ref maximumStackSize);
+        else {
+            int children = node.ChildrenCount;
+
+            // Check if we can fit the child nodes into the Heap span
+            if ((list.Count + children) < list.Heap.Length) {
+                Span<INode> subSpan = list.Heap.Slice(list.Count, children);
+                node.GetChildNodes(subSpan);
+                list.Count += children;
+
+                foreach (INode child in subSpan) {
+                    CalculateMaximumParameterStackSize(child, stackLocation, ref maximumStackSize, ref list);
+                }
+            }
+            else {
+                // Can't fit them, so go the slow route and use an array
+                INode[] nodes = new INode[children];
+                node.GetChildNodes(nodes);
+                foreach (INode child in nodes) {
+                    CalculateMaximumParameterStackSize(child, stackLocation, ref maximumStackSize, ref list);
+                }
+            }
+        }
+    }
+
+    private ref struct ChildNodeList(Span<INode> heap) {
+        public readonly Span<INode> Heap = heap;
+        public int Count;
     }
 }

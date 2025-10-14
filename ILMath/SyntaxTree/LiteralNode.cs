@@ -2,15 +2,19 @@
 
 namespace ILMath.SyntaxTree;
 
-public class NumberNode<T> : INode where T : unmanaged, INumber<T> {
+public class LiteralNode<T> : INode where T : unmanaged, INumber<T> {
+    /// <summary>
+    /// Gets the numeric value
+    /// </summary>
     public T Value { get; }
 
-    public NumberNode(T value) {
+    int INode.ChildrenCount => 0;
+
+    public LiteralNode(T value) {
         this.Value = value;
     }
 
-    public IEnumerable<INode> EnumerateChildren() {
-        yield break;
+    void INode.GetChildNodes(Span<INode> nodes) {
     }
 
     public override string ToString() {
@@ -22,8 +26,6 @@ public class NumberNode<T> : INode where T : unmanaged, INumber<T> {
     }
 
     public override bool Equals(object? obj) {
-        if (obj is not NumberNode<T> other)
-            return false;
-        return this.Value.Equals(other.Value);
+        return obj is LiteralNode<T> other && this.Value.Equals(other.Value);
     }
 }

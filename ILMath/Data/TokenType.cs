@@ -19,6 +19,7 @@ public enum TokenType {
     Or,               // |
     OnesComplement,   // ~
     Equals,           // ==
+    BoolNot,          // !
     
     Identifier,       // 
     Number,           // 

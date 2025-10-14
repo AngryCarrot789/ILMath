@@ -1,14 +1,18 @@
 ﻿namespace ILMath.SyntaxTree;
 
+/// <summary>
+/// Represents a node that accesses a node to get a value
+/// </summary>
 public class VariableNode : INode {
     public string Identifier { get; }
 
+    int INode.ChildrenCount => 0;
+    
     public VariableNode(string identifier) {
         this.Identifier = identifier;
     }
 
-    public IEnumerable<INode> EnumerateChildren() {
-        yield break;
+    void INode.GetChildNodes(Span<INode> nodes) {
     }
 
     public override string ToString() {

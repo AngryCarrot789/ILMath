@@ -8,11 +8,11 @@ public class EqualityTestDouble {
     public void TestMethod1() {
         OperatorNode expect = new OperatorNode(
             OperatorType.Plus,
-            new NumberNode<double>(2.0),
+            new LiteralNode<double>(2.0),
             new OperatorNode(
                 OperatorType.Multiplication,
-                new NumberNode<double>(1.0),
-                new NumberNode<double>(5.0)));
+                new LiteralNode<double>(1.0),
+                new LiteralNode<double>(5.0)));
         Assert.AreEqual(expect, CreateSyntaxTree("2 + 1 * 5"));
     }
 
@@ -29,7 +29,7 @@ public class EqualityTestDouble {
                 new OperatorNode(
                     OperatorType.Division,
                     new VariableNode("pi"),
-                    new NumberNode<double>(2.0))
+                    new LiteralNode<double>(2.0))
             ]);
         Assert.AreNotEqual(expect, CreateSyntaxTree("sin(pi / 4)"));
     }
@@ -43,22 +43,22 @@ public class EqualityTestDouble {
                     new OperatorNode(
                         OperatorType.Division,
                         new VariableNode("pi"),
-                        new NumberNode<double>(4.0))
+                        new LiteralNode<double>(4.0))
                 ]),
-            new NumberNode<double>(8.0));
+            new LiteralNode<double>(8.0));
         Assert.AreEqual(expect, CreateSyntaxTree("sin(pi / 4) * 8.0"));
     }
 
     [TestMethod]
     public void TestMethod5() {
-        NumberNode<double> expect = new NumberNode<double>(5.0);
+        LiteralNode<double> expect = new LiteralNode<double>(5.0);
         Assert.AreEqual(expect, CreateSyntaxTree("5"));
     }
 
     [TestMethod]
     public void TestMethod6() {
         FunctionNode expect = new FunctionNode("pow", [
-            new NumberNode<double>(4.0), new NumberNode<double>(7.0)
+            new LiteralNode<double>(4.0), new LiteralNode<double>(7.0)
         ]);
 
         Assert.AreEqual(expect, CreateSyntaxTree("pow(4,7)"));
@@ -68,11 +68,11 @@ public class EqualityTestDouble {
     public void TestMethod7() {
         FunctionNode expect = new FunctionNode(
             "pow", [
-                new NumberNode<double>(4.0),
+                new LiteralNode<double>(4.0),
                 new OperatorNode(
                     OperatorType.Plus,
-                    new NumberNode<double>(7.0),
-                    new NumberNode<double>(2.0))
+                    new LiteralNode<double>(7.0),
+                    new LiteralNode<double>(2.0))
             ]);
         Assert.AreEqual(expect, CreateSyntaxTree("pow(4, (7 + 2))"));
     }
@@ -80,13 +80,13 @@ public class EqualityTestDouble {
     [TestMethod]
     public void TestMethod8() {
         FunctionNode expect = new FunctionNode("pow", [
-            new NumberNode<double>(4.0),
+            new LiteralNode<double>(4.0),
             new FunctionNode("pow", [
                 new OperatorNode(
                     OperatorType.Plus,
-                    new NumberNode<double>(7.0),
-                    new NumberNode<double>(2.0)),
-                new NumberNode<double>(1.5)
+                    new LiteralNode<double>(7.0),
+                    new LiteralNode<double>(2.0)),
+                new LiteralNode<double>(1.5)
             ])
         ]);
         
