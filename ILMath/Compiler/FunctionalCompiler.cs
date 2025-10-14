@@ -9,6 +9,11 @@ namespace ILMath.Compiler;
 /// Compiles the expression using functional methods.
 /// </summary>
 public class FunctionalCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T> {
+    internal static readonly ICompiler<T> Instance = new FunctionalCompiler<T>();
+
+    internal FunctionalCompiler() {
+    }
+
     /// <summary>
     /// Compiles the syntax tree into a function.
     /// </summary>

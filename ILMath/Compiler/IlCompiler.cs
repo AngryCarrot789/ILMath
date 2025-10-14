@@ -12,7 +12,12 @@ namespace ILMath.Compiler;
 /// <b>Note:</b> Does not work in AOT environments.
 /// </summary>
 public class IlCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T> {
+    internal static readonly ICompiler<T> Instance = new IlCompiler<T>();
+    
     private record struct CompilationState(LocalBuilder? Parameters, int StackLocation);
+
+    internal IlCompiler() {
+    }
 
     /// <summary>
     /// Compiles the syntax tree into a function.

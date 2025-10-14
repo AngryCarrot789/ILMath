@@ -29,11 +29,11 @@ public static class MathEvaluation {
     /// <param name="method">The compilation method.</param>
     /// <returns>The created compiler.</returns>
     public static ICompiler<T> CreateCompiler<T>(CompilationMethod method) where T : unmanaged, INumber<T> {
-        return method switch {
-            CompilationMethod.IntermediateLanguage => new IlCompiler<T>(),
-            CompilationMethod.Functional => new FunctionalCompiler<T>(),
-            CompilationMethod.ExpressionTree => new ExpressionTreeCompiler<T>(),
-            _ => throw new ArgumentException($"Unknown compilation method: {method}")
-        };
+        switch (method) {
+            case CompilationMethod.IntermediateLanguage: return IlCompiler<T>.Instance;
+            case CompilationMethod.Functional:           return FunctionalCompiler<T>.Instance;
+            case CompilationMethod.ExpressionTree:       return ExpressionTreeCompiler<T>.Instance;
+            default:                                     throw new ArgumentException($"Unknown compilation method: {method}");
+        }
     }
 }

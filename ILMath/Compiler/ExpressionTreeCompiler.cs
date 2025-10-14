@@ -12,6 +12,10 @@ namespace ILMath.Compiler;
 public class ExpressionTreeCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T> {
     private static readonly MethodInfo MethodInfo_CallMethod = typeof(ExpressionTreeCompiler<T>).GetMethod(nameof(CallMethod), BindingFlags.Static | BindingFlags.NonPublic)!;
     private static readonly MethodInfo MethodInfo_GetVariable = typeof(IEvaluationContext<T>).GetMethod(nameof(IEvaluationContext<T>.GetVariable))!;
+    internal static readonly ICompiler<T> Instance = new ExpressionTreeCompiler<T>();
+
+    internal ExpressionTreeCompiler() {
+    }
 
     /// <summary>
     /// Compiles the syntax tree into a function.
