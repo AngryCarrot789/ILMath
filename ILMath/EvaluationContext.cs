@@ -21,11 +21,64 @@ public abstract class EvaluationContext<T> : IEvaluationContext<T> where T : unm
     protected internal virtual void RegisterBuiltIns() {
         this.RegisterFunction("mod", static p => p[0] % p[1]);
         this.RegisterFunction("abs", static p => T.Abs(p[0]));
-        this.RegisterFunction("min", static p => T.Min(p[0], p[1]));
-        this.RegisterFunction("max", static p => T.Max(p[0], p[1]));
+        this.RegisterFunction("min", static p => Min(p));
+        this.RegisterFunction("max", static p => Max(p));
+        this.RegisterFunction("sum", static p => Sum(p));
+        this.RegisterFunction("mean", static p => Sum(p) / T.CreateChecked(p.Length));
+        this.RegisterFunction("average", static p => Sum(p) / T.CreateChecked(p.Length));
+        this.RegisterFunction("range", static p => {
+            if (p.Length < 1)
+                return default;
+            if (p.Length == 1)
+                return p[0];
+            T min = p[0], max = min;
+            for (int i = 1; i < p.Length; i++) {
+                T val = p[i];
+                if (val < min)
+                    min = val;
+                if (val > max)
+                    max = val;
+            }
+
+            return max - min;
+        });
         this.RegisterFunction("clamp", static p => T.Clamp(p[0], p[1], p[2]));
+        this.RegisterFunction("mode", static p => {
+            if (p.Length < 1)
+                return default;
+            if (p.Length < 3)
+                return p[0];
+            return p.ToArray().GroupBy(x => x).OrderByDescending(x => x.Count()).First().Key;
+        });
         this.RegisterFunction("lerp", static p => (p[2] - p[1]) * p[0] + p[1]);
         this.RegisterFunction("inverseLerp", static p => (p[0] - p[1]) / (p[2] - p[1]));
+    }
+
+    private static T Min(Span<T> values) {
+        if (values.Length < 1)
+            return default;
+        T min = values[0];
+        for (int i = 1; i < values.Length; i++)
+            min = T.Min(min, values[i]);
+        return min;
+    }
+
+    private static T Max(Span<T> values) {
+        if (values.Length < 1)
+            return default;
+        T max = values[0];
+        for (int i = 1; i < values.Length; i++)
+            max = T.Max(max, values[i]);
+        return max;
+    }
+
+    private static T Sum(Span<T> values) {
+        if (values.Length < 1)
+            return default;
+        T sum = values[0];
+        for (int i = 1; i < values.Length; i++)
+            sum += values[i];
+        return sum;
     }
 
     /// <summary>
