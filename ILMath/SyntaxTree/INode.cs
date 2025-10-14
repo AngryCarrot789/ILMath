@@ -1,6 +1,5 @@
 ﻿namespace ILMath.SyntaxTree;
 
-public interface INode
-{
+public interface INode {
     IEnumerable<INode> EnumerateChildren();
 }

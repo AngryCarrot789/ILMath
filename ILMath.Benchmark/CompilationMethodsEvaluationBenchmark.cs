@@ -4,37 +4,32 @@ using BenchmarkDotNet.Jobs;
 namespace ILMath.Benchmark;
 
 [SimpleJob(RuntimeMoniker.Net80)]
-public class CompilationMethodsEvaluationBenchmark
-{
-    private IEvaluationContext context = null!;
-    private Evaluator ilEvaluator = null!;
-    private Evaluator expressionTreeEvaluator = null!;
-    private Evaluator functionalEvaluator = null!;
+public class CompilationMethodsEvaluationBenchmark {
+    private IEvaluationContext<double> context = null!;
+    private Evaluator<double> ilEvaluator = null!;
+    private Evaluator<double> expressionTreeEvaluator = null!;
+    private Evaluator<double> functionalEvaluator = null!;
 
     [GlobalSetup]
-    public void Setup()
-    {
-        context = EvaluationContext.CreateDefault();
-        ilEvaluator = MathEvaluation.CompileExpression(string.Empty, Constant.Expression, CompilationMethod.IntermediateLanguage);
-        expressionTreeEvaluator = MathEvaluation.CompileExpression(string.Empty, Constant.Expression, CompilationMethod.ExpressionTree);
-        functionalEvaluator = MathEvaluation.CompileExpression(string.Empty, Constant.Expression, CompilationMethod.Functional);
+    public void Setup() {
+        this.context = EvaluationContexts.CreateForDouble();
+        this.ilEvaluator = MathEvaluation.CompileExpression<double>(string.Empty, Constant.Expression, CompilationMethod.IntermediateLanguage);
+        this.expressionTreeEvaluator = MathEvaluation.CompileExpression<double>(string.Empty, Constant.Expression, CompilationMethod.ExpressionTree);
+        this.functionalEvaluator = MathEvaluation.CompileExpression<double>(string.Empty, Constant.Expression, CompilationMethod.Functional);
     }
-    
+
     [Benchmark]
-    public double IntermediateLanguageEvaluation()
-    {
-        return ilEvaluator(context);
+    public double IntermediateLanguageEvaluation() {
+        return this.ilEvaluator(this.context);
     }
-    
+
     [Benchmark]
-    public double ExpressionTreeEvaluation()
-    {
-        return expressionTreeEvaluator(context);
+    public double ExpressionTreeEvaluation() {
+        return this.expressionTreeEvaluator(this.context);
     }
-    
+
     [Benchmark]
-    public double FunctionalEvaluation()
-    {
-        return functionalEvaluator(context);
+    public double FunctionalEvaluation() {
+        return this.functionalEvaluator(this.context);
     }
 }

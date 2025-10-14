@@ -1,33 +1,27 @@
 ﻿namespace ILMath.SyntaxTree;
 
-public class VariableNode : INode
-{
+public class VariableNode : INode {
     public string Identifier { get; }
-    
-    public VariableNode(string identifier)
-    {
-        Identifier = identifier;
+
+    public VariableNode(string identifier) {
+        this.Identifier = identifier;
     }
-    
-    public IEnumerable<INode> EnumerateChildren()
-    {
+
+    public IEnumerable<INode> EnumerateChildren() {
         yield break;
     }
-    
-    public override string ToString()
-    {
-        return $"Variable({Identifier})";
+
+    public override string ToString() {
+        return $"{this.Identifier}";
     }
-    
-    public override int GetHashCode()
-    {
-        return Identifier.GetHashCode();
+
+    public override int GetHashCode() {
+        return this.Identifier.GetHashCode();
     }
-    
-    public override bool Equals(object? obj)
-    {
+
+    public override bool Equals(object? obj) {
         if (obj is not VariableNode other)
             return false;
-        return Identifier.Equals(other.Identifier);
+        return this.Identifier.Equals(other.Identifier);
     }
 }

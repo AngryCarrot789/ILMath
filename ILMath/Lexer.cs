@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Xml.Schema;
 using ILMath.Data;
 
 namespace ILMath;
@@ -6,137 +7,138 @@ namespace ILMath;
 /// <summary>
 /// Analyzes the input string and returns a list of tokens.
 /// </summary>
-public class Lexer
-{
+public class Lexer {
     /// <summary>
     /// The current token. Consume to get the next token.
     /// </summary>
     public Token CurrentToken { get; private set; }
-    
+
     private readonly string input;
     private int index;
-    
-    public Lexer(string input)
-    {
+
+    public Lexer(string input) {
         this.input = input;
-        Consume(TokenType.None);
+        this.Consume(TokenType.None);
     }
 
     /// <summary>
     /// Consumes the current token and sets <see cref="CurrentToken"/> to the next token.
     /// </summary>
     /// <param name="type">The type </param>
-    public bool Consume(TokenType type)
-    {
-        if (CurrentToken.Type != type) 
+    public bool Consume(TokenType type) {
+        if (this.CurrentToken.Type != type)
             return false;
-        
-        CurrentToken = NextToken();
+
+        this.CurrentToken = this.NextToken();
         return true;
     }
 
-    private Token NextToken()
-    {
+    private Token NextToken() {
         // Skip whitespace, if any
-        while (index < input.Length && char.IsWhiteSpace(input[index]))
-            index++;
-        
+        while (this.index < this.input.Length && char.IsWhiteSpace(this.input[this.index]))
+            this.index++;
+
         // Check if we are at the end of the input
-        if (index >= input.Length)
+        if (this.index >= this.input.Length)
             return new Token(TokenType.EndOfInput);
 
-        var currentChar = input[index];
-        var token = currentChar switch
-        {
-            '+' => new Token(TokenType.Plus),
-            '-' => new Token(TokenType.Minus),
-            '*' => new Token(TokenType.Multiplication),
-            '/' => new Token(TokenType.Division),
-            '%' => new Token(TokenType.Modulo),
-            '^' => new Token(TokenType.Power),
-            '(' => new Token(TokenType.OpenParenthesis),
-            ')' => new Token(TokenType.CloseParenthesis),
-            ',' => new Token(TokenType.Comma),
-            _ => new Token(TokenType.None)
-        };
-        
+        char currentChar = this.input[this.index];
+        Token token;
+        switch (currentChar) {
+            case '+': token = new Token(TokenType.Plus); break;
+            case '-': token = new Token(TokenType.Minus); break;
+            case '*': token = new Token(TokenType.Multiplication); break;
+            case '/': token = new Token(TokenType.Division); break;
+            case '%': token = new Token(TokenType.Modulo); break;
+            case '^': token = new Token(TokenType.Xor); break;
+            case '(': token = new Token(TokenType.OpenParenthesis); break;
+            case ')': token = new Token(TokenType.CloseParenthesis); break;
+            case ',': token = new Token(TokenType.Comma); break;
+            case '&': token = new Token(TokenType.And); break;
+            case '|': token = new Token(TokenType.Or); break;
+            case '~': token = new Token(TokenType.OnesComplement); break;
+            case '<': token = this.NextMultiCharToken('<', TokenType.LShift); break;
+            case '>': token = this.NextMultiCharToken('>', TokenType.RShift); break;
+            case '=': token = this.NextMultiCharToken('=', TokenType.Equals); break;
+            default:  token = new Token(TokenType.None); break;
+        }
+
         // If we found a symbol, return it
-        if (token.Type != TokenType.None)
-        {
-            index++;
+        if (token.Type != TokenType.None) {
+            this.index++;
             return token;
         }
-        
+
         // Else, we found a number or identifier
-        return NextNonSymbolToken();
+        return this.NextNonSymbolToken();
     }
 
-    private Token NextNonSymbolToken()
-    {
-        var currentChar = input[index];
-        
+    private Token NextMultiCharToken(char nextChar, TokenType tokenType) {
+        this.index++;
+        return this.index < this.input.Length && this.input[this.index] == nextChar
+            ? new Token(tokenType)
+            : new Token(TokenType.Unknown);
+    }
+
+    private Token NextNonSymbolToken() {
+        char currentChar = this.input[this.index];
+
         // If it is a number, read the whole number
         if (char.IsDigit(currentChar))
-            return NextNumber();
-        
+            return this.NextNumber();
+
         // If it is a letter, read the whole identifier
         if (IsIdentifierChar(currentChar))
-            return NextIdentifier();
+            return this.NextIdentifier();
 
         // Else, we found an unknown token
-        index++;
+        this.index++;
         return new Token(TokenType.Unknown, currentChar.ToString());
     }
 
-    private Token NextIdentifier()
-    {
-        var builder = new StringBuilder();
-        
+    private Token NextIdentifier() {
+        StringBuilder builder = new StringBuilder();
+
         // Read the whole identifier
-        while (index < input.Length && IsIdentifierChar(input[index]))
-        {
-            builder.Append(input[index]);
-            index++;
+        while (this.index < this.input.Length && IsIdentifierChar(this.input[this.index])) {
+            builder.Append(this.input[this.index]);
+            this.index++;
         }
-        
+
         return new Token(TokenType.Identifier, builder.ToString());
     }
 
-    private bool IsIdentifierChar(char c)
-    {
-        return c == '_' 
-               || c == '@'
-               || c == '$'
-               || c == '#'
-               || (c >= 'a' && c <= 'z') 
-               || (c >= 'A' && c <= 'Z') 
-               || char.IsDigit(c);
+    private static bool IsIdentifierChar(char c) {
+        switch (c) {
+            case '_':
+            case '@':
+            case '$':
+            case '#':
+                return true;
+            default:  return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || char.IsDigit(c);
+        }
     }
 
-    private Token NextNumber()
-    {
-        var builder = new StringBuilder();
-        
+    private Token NextNumber() {
+        StringBuilder builder = new StringBuilder();
+
         // Read the whole number
-        while (index < input.Length && char.IsDigit(input[index]))
-        {
-            builder.Append(input[index]);
-            index++;
+        while (this.index < this.input.Length && char.IsDigit(this.input[this.index])) {
+            builder.Append(this.input[this.index]);
+            this.index++;
         }
 
         // If we found a dot, read the decimal part
-        if (index < input.Length && input[index] == '.')
-        {
-            builder.Append(input[index]);
-            index++;
-            
-            while (index < input.Length && char.IsDigit(input[index]))
-            {
-                builder.Append(input[index]);
-                index++;
+        if (this.index < this.input.Length && this.input[this.index] == '.') {
+            builder.Append(this.input[this.index]);
+            this.index++;
+
+            while (this.index < this.input.Length && char.IsDigit(this.input[this.index])) {
+                builder.Append(this.input[this.index]);
+                this.index++;
             }
         }
-        
+
         return new Token(TokenType.Number, builder.ToString());
     }
 }

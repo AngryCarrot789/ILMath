@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using System.Numerics;
+using System.Runtime.CompilerServices;
 using ILMath.Exception;
 using ILMath.SyntaxTree;
 
@@ -7,90 +8,174 @@ namespace ILMath.Compiler;
 /// <summary>
 /// Compiles the expression using functional methods.
 /// </summary>
-public class FunctionalCompiler : ICompiler
-{
+public class FunctionalCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T> {
     /// <summary>
     /// Compiles the syntax tree into a function.
     /// </summary>
     /// <param name="name">The name of the function.</param>
     /// <param name="tree">The syntax tree to compile.</param>
     /// <returns>The evaluator.</returns>
-    public Evaluator Compile(string name, INode tree)
-    {
-        return CompileSyntaxTree(tree);
+    public Evaluator<T> Compile(string name, INode tree) {
+        return this.CompileSyntaxTree(tree);
     }
 
-    private Evaluator CompileSyntaxTree(INode rootNode)
-    {
-        var compiledRoot = CompileNode(rootNode);
+    private Evaluator<T> CompileSyntaxTree(INode rootNode) {
+        Evaluator<T> compiledRoot = this.CompileNode(rootNode);
         return context => compiledRoot(context);
     }
 
-    private Evaluator CompileNode(INode node)
-    {
-        return node switch
-        {
-            OperatorNode expressionNode => CompileOperatorNode(expressionNode),
-            NumberNode numberNode => CompileNumberNode(numberNode),
-            UnaryNode unaryNode => CompileUnaryNode(unaryNode),
+    private Evaluator<T> CompileNode(INode node) {
+        return node switch {
+            OperatorNode expressionNode => this.CompileOperatorNode(expressionNode),
+            NumberNode<T> numberNode => CompileNumberNode(numberNode),
+            UnaryNode unaryNode => this.CompileUnaryNode(unaryNode),
             VariableNode variableNode => CompileVariableNode(variableNode),
-            FunctionNode functionNode => CompileFunctionNode(functionNode),
+            FunctionNode functionNode => this.CompileFunctionNode(functionNode),
             _ => throw new CompilerException($"Unknown node type: {node.GetType()}")
         };
     }
 
-    private Evaluator CompileOperatorNode(OperatorNode operatorNode)
-    {
-        var left = operatorNode.Left;
-        var right = operatorNode.Right;
-        var @operator = operatorNode.Operator;
-        var compiledLeft = CompileNode(left);
-        var compiledRight = CompileNode(right);
-        return @operator switch
-        {
-            OperatorType.Plus => context => compiledLeft(context) + compiledRight(context),
-            OperatorType.Minus => context => compiledLeft(context) - compiledRight(context),
-            OperatorType.Multiplication => context => compiledLeft(context) * compiledRight(context),
-            OperatorType.Division => context => compiledLeft(context) / compiledRight(context),
-            OperatorType.Modulo => context => compiledLeft(context) % compiledRight(context),
-            OperatorType.Exponent => context => Math.Pow(compiledLeft(context), compiledRight(context)),
-            _ => throw new CompilerException($"Unknown operator: {@operator}")
-        };
+    private Evaluator<T> CompileOperatorNode(OperatorNode operatorNode) {
+        INode left = operatorNode.Left;
+        INode right = operatorNode.Right;
+        OperatorType @operator = operatorNode.Operator;
+        Evaluator<T> compiledLeft = this.CompileNode(left);
+        Evaluator<T> compiledRight = this.CompileNode(right);
+        switch (@operator) {
+            case OperatorType.Plus:           return context => compiledLeft(context) + compiledRight(context);
+            case OperatorType.Minus:          return context => compiledLeft(context) - compiledRight(context);
+            case OperatorType.Multiplication: return context => compiledLeft(context) * compiledRight(context);
+            case OperatorType.Division:       return context => compiledLeft(context) / compiledRight(context);
+            case OperatorType.Modulo:         return context => compiledLeft(context) % compiledRight(context);
+        }
+
+        if (!Util<T>.IsFP) {
+            switch (@operator) {
+                case OperatorType.Xor:    return context => Xor(compiledLeft(context), compiledRight(context));
+                case OperatorType.LShift: return context => LShift(compiledLeft(context), compiledRight(context));
+                case OperatorType.RShift: return context => RShift(compiledLeft(context), compiledRight(context));
+                case OperatorType.And:    return context => And(compiledLeft(context), compiledRight(context));
+                case OperatorType.Or:     return context => Or(compiledLeft(context), compiledRight(context));
+            }
+        }
+
+        throw new CompilerException($"Unknown operator: {@operator}");
     }
-    
-    private static Evaluator CompileNumberNode(NumberNode numberNode)
-    {
-        var value = numberNode.Value;
+
+    private static Evaluator<T> CompileNumberNode(NumberNode<T> numberNode) {
+        T value = numberNode.Value;
         return _ => value;
     }
-    
-    private Evaluator CompileUnaryNode(UnaryNode unaryNode)
-    {
-        var compiledChild = CompileNode(unaryNode.Child);
-        return unaryNode.Operator switch
-        {
-            OperatorType.Plus => context => compiledChild(context),
-            OperatorType.Minus => context => -compiledChild(context),
-            _ => throw new CompilerException($"Unknown unary operator: {unaryNode.Operator}")
-        };
+
+    private Evaluator<T> CompileUnaryNode(UnaryNode unaryNode) {
+        Evaluator<T> compiledChild = this.CompileNode(unaryNode.Child);
+        switch (unaryNode.Operator) {
+            case OperatorType.Plus:           return context => compiledChild(context);
+            case OperatorType.Minus:          return context => -compiledChild(context);
+            case OperatorType.OnesComplement: return context => Not(compiledChild(context));
+        }
+
+        throw new CompilerException($"Unknown unary operator: {unaryNode.Operator}");
     }
-    
-    private Evaluator CompileVariableNode(VariableNode variableNode)
-    {
-        var identifier = variableNode.Identifier;
+
+    private static Evaluator<T> CompileVariableNode(VariableNode variableNode) {
+        string identifier = variableNode.Identifier;
         return context => context.GetVariable(identifier);
     }
 
-    private Evaluator CompileFunctionNode(FunctionNode functionNode)
-    {
-        var parameters = functionNode.Parameters;
-        var compiledParameters = parameters.Select(CompileNode).ToArray();
-        return context =>
-        {
-            Span<double> values = stackalloc double[compiledParameters.Length];
-            for (var i = 0; i < compiledParameters.Length; i++)
+    private Evaluator<T> CompileFunctionNode(FunctionNode functionNode) {
+        IReadOnlyList<INode> parameters = functionNode.Parameters;
+        Evaluator<T>[] compiledParameters = parameters.Select(this.CompileNode).ToArray();
+        return context => {
+            Span<T> values = stackalloc T[compiledParameters.Length];
+            for (int i = 0; i < compiledParameters.Length; i++)
                 values[i] = compiledParameters[i](context);
             return context.CallFunction(functionNode.Identifier, values);
         };
+    }
+
+    private static T Not(T input) {
+        if (typeof(T) == typeof(int))
+            return Operate1<int>(input, static x => ~x);
+        if (typeof(T) == typeof(uint))
+            return Operate1<uint>(input, static x => ~x);
+        if (typeof(T) == typeof(long))
+            return Operate1<long>(input, static x => ~x);
+        if (typeof(T) == typeof(ulong))
+            return Operate1<ulong>(input, static x => ~x);
+        throw new EvaluationException($"Unknown type: {typeof(T)}");
+    }
+
+    private static T Xor(T a, T b) {
+        if (typeof(T) == typeof(int))
+            return Operate2<int>(a, b, static (x, y) => (x ^ y));
+        if (typeof(T) == typeof(uint))
+            return Operate2<uint>(a, b, static (x, y) => (x ^ y));
+        if (typeof(T) == typeof(long))
+            return Operate2<long>(a, b, static (x, y) => (x ^ y));
+        if (typeof(T) == typeof(ulong))
+            return Operate2<ulong>(a, b, static (x, y) => (x ^ y));
+        throw new EvaluationException($"Unknown type: {typeof(T)}");
+    }
+
+    private static T LShift(T a, T b) {
+        if (typeof(T) == typeof(int))
+            return Operate2<int>(a, b, static (x, y) => (x << y));
+        if (typeof(T) == typeof(uint))
+            return Operate2<uint>(a, b, static (x, y) => (x << (int) y));
+        if (typeof(T) == typeof(long))
+            return Operate2<long>(a, b, static (x, y) => (x << (int) y));
+        if (typeof(T) == typeof(ulong))
+            return Operate2<ulong>(a, b, static (x, y) => (x << (int) y));
+        throw new EvaluationException($"Unknown type: {typeof(T)}");
+    }
+
+    private static T RShift(T a, T b) {
+        if (typeof(T) == typeof(int))
+            return Operate2<int>(a, b, static (x, y) => (x >> y));
+        if (typeof(T) == typeof(uint))
+            return Operate2<uint>(a, b, static (x, y) => (x >> (int) y));
+        if (typeof(T) == typeof(long))
+            return Operate2<long>(a, b, static (x, y) => (x >> (int) y));
+        if (typeof(T) == typeof(ulong))
+            return Operate2<ulong>(a, b, static (x, y) => (x >> (int) y));
+        throw new EvaluationException($"Unknown type: {typeof(T)}");
+    }
+
+    private static T And(T a, T b) {
+        if (typeof(T) == typeof(int))
+            return Operate2<int>(a, b, static (x, y) => (x & y));
+        if (typeof(T) == typeof(uint))
+            return Operate2<uint>(a, b, static (x, y) => (x & y));
+        if (typeof(T) == typeof(long))
+            return Operate2<long>(a, b, static (x, y) => (x & y));
+        if (typeof(T) == typeof(ulong))
+            return Operate2<ulong>(a, b, static (x, y) => (x & y));
+        throw new EvaluationException($"Unknown type: {typeof(T)}");
+    }
+
+    private static T Or(T a, T b) {
+        if (typeof(T) == typeof(int))
+            return Operate2<int>(a, b, static (x, y) => (x | y));
+        if (typeof(T) == typeof(uint))
+            return Operate2<uint>(a, b, static (x, y) => (x | y));
+        if (typeof(T) == typeof(long))
+            return Operate2<long>(a, b, static (x, y) => (x | y));
+        if (typeof(T) == typeof(ulong))
+            return Operate2<ulong>(a, b, static (x, y) => (x | y));
+        throw new EvaluationException($"Unknown type: {typeof(T)}");
+    }
+
+    private static T Operate1<TTo>(T input, Func<TTo, TTo> operate) {
+        TTo tIn = Unsafe.As<T, TTo>(ref input);
+        TTo ret = operate(tIn);
+        return Unsafe.As<TTo, T>(ref ret);
+    }
+
+    private static T Operate2<TTo>(T a, T b, Func<TTo, TTo, TTo> operate) {
+        TTo tA = Unsafe.As<T, TTo>(ref a);
+        TTo tB = Unsafe.As<T, TTo>(ref b);
+        TTo ret = operate(tA, tB);
+        return Unsafe.As<TTo, T>(ref ret);
     }
 }

@@ -4,31 +4,26 @@ using BenchmarkDotNet.Jobs;
 namespace ILMath.Benchmark;
 
 [SimpleJob(RuntimeMoniker.Net80)]
-public class CompilationMethodsCompilationBenchmark
-{
-    private IEvaluationContext context = null!;
+public class CompilationMethodsCompilationBenchmark {
+    private EvaluationContext<double> context = null!;
 
     [GlobalSetup]
-    public void Setup()
-    {
-        context = EvaluationContext.CreateDefault();
-    }
-    
-    [Benchmark]
-    public Evaluator IntermediateLanguageCompilation()
-    {
-        return MathEvaluation.CompileExpression(string.Empty, Constant.Expression, CompilationMethod.IntermediateLanguage);
+    public void Setup() {
+        this.context = EvaluationContexts.CreateForDouble();
     }
 
     [Benchmark]
-    public Evaluator ExpressionTreeCompilation()
-    {
-        return MathEvaluation.CompileExpression(string.Empty, Constant.Expression, CompilationMethod.ExpressionTree);
+    public Evaluator<double> IntermediateLanguageCompilation() {
+        return MathEvaluation.CompileExpression<double>(string.Empty, Constant.Expression, CompilationMethod.IntermediateLanguage);
     }
 
     [Benchmark]
-    public Evaluator FunctionalCompilation()
-    {
-        return MathEvaluation.CompileExpression(string.Empty, Constant.Expression, CompilationMethod.Functional);
+    public Evaluator<double> ExpressionTreeCompilation() {
+        return MathEvaluation.CompileExpression<double>(string.Empty, Constant.Expression, CompilationMethod.ExpressionTree);
+    }
+
+    [Benchmark]
+    public Evaluator<double> FunctionalCompilation() {
+        return MathEvaluation.CompileExpression<double>(string.Empty, Constant.Expression, CompilationMethod.Functional);
     }
 }

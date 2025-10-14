@@ -1,6 +1,8 @@
+using System.Numerics;
+
 namespace ILMath;
 
 /// <summary>
 /// Represents a function that is compiled to evaluate an expression.
 /// </summary>
-public delegate double Evaluator(IEvaluationContext context);
+public delegate T Evaluator<T>(IEvaluationContext<T> context) where T : unmanaged, INumber<T>;

@@ -1,12 +1,13 @@
-﻿using ILMath.Compiler;
+﻿using System.Numerics;
+using ILMath.Compiler;
+using ILMath.SyntaxTree;
 
 namespace ILMath;
 
 /// <summary>
 /// Helper class for math evaluation.
 /// </summary>
-public static class MathEvaluation
-{
+public static class MathEvaluation {
     /// <summary>
     /// Compiles an expression to a function.
     /// </summary>
@@ -14,12 +15,11 @@ public static class MathEvaluation
     /// <param name="expression">The math expression.</param>
     /// <param name="method">The compilation method.</param>
     /// <returns>The evaluator.</returns>
-    public static Evaluator CompileExpression(string functionName, string expression, CompilationMethod method = CompilationMethod.IntermediateLanguage)
-    {
-        var lexer = new Lexer(expression);
-        var parser = new Parser(lexer);
-        var node = parser.Parse();
-        var compiler = CreateCompiler(method);
+    public static Evaluator<T> CompileExpression<T>(string functionName, string expression, CompilationMethod method = CompilationMethod.IntermediateLanguage) where T : unmanaged, INumber<T> {
+        Lexer lexer = new Lexer(expression);
+        Parser<T> parser = new Parser<T>(lexer);
+        INode node = parser.Parse();
+        ICompiler<T> compiler = CreateCompiler<T>(method);
         return compiler.Compile(functionName, node);
     }
 
@@ -28,13 +28,11 @@ public static class MathEvaluation
     /// </summary>
     /// <param name="method">The compilation method.</param>
     /// <returns>The created compiler.</returns>
-    public static ICompiler CreateCompiler(CompilationMethod method)
-    {
-        return method switch
-        {
-            CompilationMethod.IntermediateLanguage => new IlCompiler(),
-            CompilationMethod.Functional => new FunctionalCompiler(),
-            CompilationMethod.ExpressionTree => new ExpressionTreeCompiler(),
+    public static ICompiler<T> CreateCompiler<T>(CompilationMethod method) where T : unmanaged, INumber<T> {
+        return method switch {
+            CompilationMethod.IntermediateLanguage => new IlCompiler<T>(),
+            CompilationMethod.Functional => new FunctionalCompiler<T>(),
+            CompilationMethod.ExpressionTree => new ExpressionTreeCompiler<T>(),
             _ => throw new ArgumentException($"Unknown compilation method: {method}")
         };
     }

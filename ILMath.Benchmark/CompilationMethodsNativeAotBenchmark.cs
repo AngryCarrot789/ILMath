@@ -4,41 +4,35 @@ using BenchmarkDotNet.Jobs;
 namespace ILMath.Benchmark;
 
 [SimpleJob(RuntimeMoniker.NativeAot80)]
-public class CompilationMethodsNativeAotBenchmark
-{
-    private IEvaluationContext context = null!;
-    private Evaluator expressionTreeEvaluator = null!;
-    private Evaluator functionalEvaluator = null!;
+public class CompilationMethodsNativeAotBenchmark {
+    private IEvaluationContext<double> context = null!;
+    private Evaluator<double> expressionTreeEvaluator = null!;
+    private Evaluator<double> functionalEvaluator = null!;
 
     [GlobalSetup]
-    public void Setup()
-    {
-        context = EvaluationContext.CreateDefault(); 
-        expressionTreeEvaluator = MathEvaluation.CompileExpression(string.Empty, Constant.Expression, CompilationMethod.ExpressionTree);
-        functionalEvaluator = MathEvaluation.CompileExpression(string.Empty, Constant.Expression, CompilationMethod.Functional);
+    public void Setup() {
+        this.context = EvaluationContexts.CreateForDouble();
+        this.expressionTreeEvaluator = MathEvaluation.CompileExpression<double>(string.Empty, Constant.Expression, CompilationMethod.ExpressionTree);
+        this.functionalEvaluator = MathEvaluation.CompileExpression<double>(string.Empty, Constant.Expression, CompilationMethod.Functional);
     }
-    
+
     [Benchmark]
-    public Evaluator ExpressionTreeCompilation()
-    {
-        return MathEvaluation.CompileExpression(string.Empty, Constant.Expression, CompilationMethod.ExpressionTree);
+    public Evaluator<double> ExpressionTreeCompilation() {
+        return MathEvaluation.CompileExpression<double>(string.Empty, Constant.Expression, CompilationMethod.ExpressionTree);
     }
-    
+
     [Benchmark]
-    public Evaluator FunctionalCompilation()
-    {
-        return MathEvaluation.CompileExpression(string.Empty, Constant.Expression, CompilationMethod.Functional);
+    public Evaluator<double> FunctionalCompilation() {
+        return MathEvaluation.CompileExpression<double>(string.Empty, Constant.Expression, CompilationMethod.Functional);
     }
-    
+
     [Benchmark]
-    public double ExpressionTreeEvaluation()
-    {
-        return expressionTreeEvaluator(context);
+    public double ExpressionTreeEvaluation() {
+        return this.expressionTreeEvaluator(this.context);
     }
-    
+
     [Benchmark]
-    public double FunctionalEvaluation()
-    {
-        return functionalEvaluator(context);
+    public double FunctionalEvaluation() {
+        return this.functionalEvaluator(this.context);
     }
 }

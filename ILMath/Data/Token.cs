@@ -3,8 +3,7 @@
 /// <summary>
 /// Represents a token.
 /// </summary>
-public struct Token
-{
+public readonly struct Token {
     /// <summary>
     /// The type of this token.
     /// </summary>
@@ -15,19 +14,16 @@ public struct Token
     /// </summary>
     public string? Value { get; } = null;
 
-    public Token(TokenType type, string? value)
-    {
-        Type = type;
-        Value = value;
+    public Token(TokenType type, string? value) {
+        this.Type = type;
+        this.Value = value;
     }
 
-    public Token(TokenType type)
-    {
-        Type = type;
+    public Token(TokenType type) {
+        this.Type = type;
     }
-    
-    public override string ToString()
-    {
-        return string.IsNullOrWhiteSpace(Value) ? $"Token({Type})" : $"Token({Type}, {Value})";
+
+    public override string ToString() {
+        return string.IsNullOrWhiteSpace(this.Value) ? $"Token({this.Type})" : $"Token({this.Type}, {this.Value})";
     }
 }

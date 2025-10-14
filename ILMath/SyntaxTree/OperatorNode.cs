@@ -1,41 +1,38 @@
-﻿namespace ILMath.SyntaxTree;
+﻿using System.Diagnostics;
 
-public class OperatorNode : INode
-{
+namespace ILMath.SyntaxTree;
+
+public class OperatorNode : INode {
     public OperatorType Operator { get; }
     public INode Left { get; }
     public INode Right { get; }
-    
+
     public OperatorNode(OperatorType @operator, INode left, INode right) {
-        Operator = @operator;
-        Left = left;
-        Right = right;
-    }
-    
-    public IEnumerable<INode> EnumerateChildren()
-    {
-        yield return Left;
-        yield return Right;
+        this.Operator = @operator;
+        this.Left = left;
+        this.Right = right;
     }
 
-    public override string ToString()
-    {
-        return $"Operator({Operator}, {Left}, {Right})";
+    public IEnumerable<INode> EnumerateChildren() {
+        yield return this.Left;
+        yield return this.Right;
     }
 
-    public override int GetHashCode()
-    {
-        var hash = new HashCode();
-        hash.Add(Operator);
-        hash.Add(Left);
-        hash.Add(Right);
+    public override string ToString() {
+        return $"({this.Left} {this.Operator.ToToken()} {this.Right})";
+    }
+
+    public override int GetHashCode() {
+        HashCode hash = new HashCode();
+        hash.Add(this.Operator);
+        hash.Add(this.Left);
+        hash.Add(this.Right);
         return hash.ToHashCode();
     }
 
-    public override bool Equals(object? obj)
-    {
+    public override bool Equals(object? obj) {
         if (obj is not OperatorNode other)
             return false;
-        return Operator == other.Operator && Left.Equals(other.Left) && Right.Equals(other.Right);
+        return this.Operator == other.Operator && this.Left.Equals(other.Left) && this.Right.Equals(other.Right);
     }
 }
