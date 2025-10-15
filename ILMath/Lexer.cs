@@ -16,9 +16,6 @@ public class Lexer {
     private int index;
     private readonly ParsingContext ctx;
 
-    public Lexer(string input) : this(input, default) {
-    }
-
     public Lexer(string input, ParsingContext parsingContext) {
         this.input = input;
         this.ctx = parsingContext;

@@ -28,7 +28,7 @@ public static class MathEvaluation {
     /// <param name="method">The compilation method.</param>
     /// <returns>The evaluator.</returns>
     public static Evaluator<T> CompileExpression<T>(string functionName, string expression, ParsingContext parsingContext, CompilationMethod method = CompilationMethod.IntermediateLanguage) where T : unmanaged, INumber<T> {
-        Lexer lexer = new Lexer(expression);
+        Lexer lexer = new Lexer(expression, parsingContext);
         Parser<T> parser = new Parser<T>(lexer, parsingContext);
         INode node = parser.Parse();
         ICompiler<T> compiler = CreateCompiler<T>(method);
