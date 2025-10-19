@@ -1,10 +1,15 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Reflection;
+using System.Reflection.Emit;
 
 namespace ILMath.Compiler;
 
 [SuppressMessage("ReSharper", "StaticMemberInGenericType", Justification = $"We use the {nameof(Util<T>)}<T> class for storing type-specific information")]
-public static class Util<T> {
+public static class Util<T> where T : INumber<T> {
+    public static readonly T BoolTrue = T.CreateChecked(1);
+    public static readonly T BoolFalse = T.CreateChecked(0);
+
     public static bool IsFP { get; }
     public static bool IsUN { get; }
     public static bool Is64 { get; }
@@ -44,6 +49,23 @@ public static class Util<T> {
         }
 
         throw new InvalidOperationException("Unsupported type: " + typeof(T));
+    }
+
+    public static void EmitI4ToTypeT(ILGenerator il) {
+        if (typeof(T) != typeof(int)) {
+            if (typeof(T) == typeof(uint))
+                il.Emit(OpCodes.Conv_U4);
+            else if (typeof(T) == typeof(long))
+                il.Emit(OpCodes.Conv_I8);
+            else if (typeof(T) == typeof(ulong))
+                il.Emit(OpCodes.Conv_U8);
+            else if (typeof(T) == typeof(float))
+                il.Emit(OpCodes.Conv_R4);
+            else if (typeof(T) == typeof(double))
+                il.Emit(OpCodes.Conv_R8);
+            else
+                throw new NotSupportedException($"Unsupported conversion target type {typeof(T)}");
+        }
     }
 }
 

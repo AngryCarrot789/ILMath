@@ -77,7 +77,7 @@ public class EqualityTestInt {
     }
 
     private static INode CreateSyntaxTree(string expression) {
-        Lexer lexer = new Lexer(expression);
+        Lexer lexer = new Lexer(expression, default);
         Parser<int> parser = new Parser<int>(lexer);
         INode syntaxTree = parser.Parse();
         return syntaxTree;

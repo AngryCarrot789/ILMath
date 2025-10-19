@@ -94,7 +94,7 @@ public class EqualityTestDouble {
     }
 
     private static INode CreateSyntaxTree(string expression) {
-        Lexer lexer = new Lexer(expression);
+        Lexer lexer = new Lexer(expression, default);
         Parser<double> parser = new Parser<double>(lexer);
         INode syntaxTree = parser.Parse();
         return syntaxTree;

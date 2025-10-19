@@ -18,8 +18,17 @@ public enum TokenType {
     And,              // &
     Or,               // |
     OnesComplement,   // ~
-    Equals,           // ==
     BoolNot,          // !
+    
+    // Boolean
+    EqualTo,              // ==
+    NotEqualTo,           // !=
+    LessThan,             // <
+    LessThanOrEqualTo,    // <=
+    GreaterThan,          // >
+    GreaterThanOrEqualTo, // >=
+    ConditionalAnd,       // &&
+    ConditionalOr,        // ||
     
     Identifier,       // 
     Literal,          // 

@@ -55,13 +55,13 @@ public class Lexer {
             case '(': token = new Token(TokenType.OpenParenthesis); break;
             case ')': token = new Token(TokenType.CloseParenthesis); break;
             case ',': token = new Token(TokenType.Comma); break;
-            case '&': token = new Token(TokenType.And); break;
-            case '|': token = new Token(TokenType.Or); break;
+            case '&': token = this.NextSingleOrMultiCharToken('&', TokenType.ConditionalAnd, TokenType.And); break;
+            case '|': token = this.NextSingleOrMultiCharToken('|', TokenType.ConditionalOr, TokenType.Or); break;
             case '~': token = new Token(TokenType.OnesComplement); break;
-            case '!': token = new Token(TokenType.BoolNot); break;
-            case '<': token = this.NextMultiCharToken('<', TokenType.LShift); break;
-            case '>': token = this.NextMultiCharToken('>', TokenType.RShift); break;
-            case '=': token = this.NextMultiCharToken('=', TokenType.Equals); break;
+            case '!': token = this.NextSingleOrMultiCharToken('=', TokenType.NotEqualTo, TokenType.BoolNot); break;
+            case '<': token = this.NextSingleOrMultiCharToken('<', TokenType.LShift, '=', TokenType.LessThanOrEqualTo, TokenType.LessThan); break;
+            case '>': token = this.NextSingleOrMultiCharToken('>', TokenType.RShift, '=', TokenType.GreaterThanOrEqualTo, TokenType.GreaterThan); break;
+            case '=': token = this.NextMultiCharToken('=', TokenType.EqualTo); break;
             default:  token = new Token(TokenType.None); break;
         }
 
@@ -76,10 +76,44 @@ public class Lexer {
     }
 
     private Token NextMultiCharToken(char nextChar, TokenType tokenType) {
-        this.index++;
-        return this.index < this.input.Length && this.input[this.index] == nextChar
-            ? new Token(tokenType)
-            : new Token(TokenType.Unknown);
+        if ((this.index + 1) < this.input.Length && this.input[this.index + 1] == nextChar) {
+            this.index++;
+            return new Token(tokenType);
+        }
+        
+        return new Token(TokenType.Unknown);
+    }
+
+    private Token NextSingleOrMultiCharToken(char nextChar, TokenType multiType, TokenType singleType) {
+        if ((this.index + 1) < this.input.Length) {
+            if (this.input[this.index + 1] == nextChar) {
+                this.index++;
+                return new Token(multiType);
+            }
+
+            return new Token(singleType);
+        }
+
+        return new Token(TokenType.Unknown);
+    }
+
+    private Token NextSingleOrMultiCharToken(char nch1, TokenType ntok1, char nch2, TokenType ntok2, TokenType singleType) {
+        if ((this.index + 1) < this.input.Length) {
+            char ch = this.input[this.index + 1];
+            if (ch == nch1) {
+                this.index++;
+                return new Token(ntok1);
+            }
+
+            if (ch == nch2) {
+                this.index++;
+                return new Token(ntok2);
+            }
+
+            return new Token(singleType);
+        }
+
+        return new Token(TokenType.Unknown);
     }
 
     private Token NextNonSymbolToken() {

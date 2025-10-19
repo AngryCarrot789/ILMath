@@ -13,7 +13,7 @@ namespace ILMath.Compiler;
 /// </summary>
 public class IlCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T> {
     internal static readonly ICompiler<T> Instance = new IlCompiler<T>();
-    
+
     private record struct CompilationState(LocalBuilder? Parameters, int StackLocation);
 
     internal IlCompiler() {
@@ -80,10 +80,47 @@ public class IlCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T> {
     private static void CompileOperatorNode(OperatorNode operatorNode, ILGenerator il, CompilationState state) {
         INode left = operatorNode.Left;
         INode right = operatorNode.Right;
-        OperatorType @operator = operatorNode.Operator;
-        CompileNode(left, il, state);
-        CompileNode(right, il, state);
-        il.Emit(GetOpCodeForOperator(@operator));
+        OperatorType op = operatorNode.Operator;
+
+        if (op == OperatorType.ConditionalAnd || op == OperatorType.ConditionalOr) {
+            CompileNode(left, il, state);
+            il.Emit(OpCodes.Ldc_I4_0);
+            il.Emit(OpCodes.Ceq);
+            il.Emit(OpCodes.Ldc_I4_0);
+            il.Emit(OpCodes.Ceq);
+
+            CompileNode(right, il, state);
+            il.Emit(OpCodes.Ldc_I4_0);
+            il.Emit(OpCodes.Ceq);
+            il.Emit(OpCodes.Ldc_I4_0);
+            il.Emit(OpCodes.Ceq);
+            il.Emit(op == OperatorType.ConditionalAnd ? OpCodes.And : OpCodes.Or);
+        }
+        else {
+            CompileNode(left, il, state);
+            CompileNode(right, il, state);
+            switch (op) {
+                case OperatorType.EqualTo: il.Emit(OpCodes.Ceq); break;
+                case OperatorType.NotEqualTo:
+                    il.Emit(OpCodes.Ceq);
+                    il.Emit(OpCodes.Ldc_I4_0);
+                    il.Emit(OpCodes.Ceq);
+                    break;
+                case OperatorType.LessThanOrEqualTo:
+                    il.Emit(Util<T>.IsUN ? OpCodes.Cgt_Un : OpCodes.Cgt);
+                    il.Emit(OpCodes.Ldc_I4_0);
+                    il.Emit(OpCodes.Ceq);
+                    break;
+                case OperatorType.GreaterThanOrEqualTo:
+                    il.Emit(Util<T>.IsUN ? OpCodes.Clt_Un : OpCodes.Clt);
+                    il.Emit(OpCodes.Ldc_I4_0);
+                    il.Emit(OpCodes.Ceq);
+                    break;
+                default: il.Emit(GetOpCodeForOperator(op)); break;
+            }
+        }
+
+        Util<T>.EmitI4ToTypeT(il);
     }
 
     private static void CompileNumberNode(LiteralNode<T> literalNode, ILGenerator il) {
@@ -200,15 +237,17 @@ public class IlCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T> {
             case OperatorType.Multiplication: return OpCodes.Mul;
             case OperatorType.Division:       return OpCodes.Div;
             case OperatorType.Modulo:         return OpCodes.Rem;
+            case OperatorType.LessThan:       return Util<T>.IsUN ? OpCodes.Clt_Un : OpCodes.Clt;
+            case OperatorType.GreaterThan:    return Util<T>.IsUN ? OpCodes.Cgt_Un : OpCodes.Cgt;
         }
 
         if (!Util<T>.IsFP) {
             switch (operatorType) {
-                case OperatorType.Xor:            return OpCodes.Xor;
-                case OperatorType.LShift:         return OpCodes.Shl;
-                case OperatorType.RShift:         return Util<T>.IsUN ? OpCodes.Shr_Un : OpCodes.Shr;
-                case OperatorType.And:            return OpCodes.And;
-                case OperatorType.Or:             return OpCodes.Or;
+                case OperatorType.Xor:    return OpCodes.Xor;
+                case OperatorType.LShift: return OpCodes.Shl;
+                case OperatorType.RShift: return Util<T>.IsUN ? OpCodes.Shr_Un : OpCodes.Shr;
+                case OperatorType.And:    return OpCodes.And;
+                case OperatorType.Or:     return OpCodes.Or;
             }
         }
 

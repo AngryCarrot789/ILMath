@@ -14,6 +14,9 @@ public class ExpressionTreeCompiler<T> : ICompiler<T> where T : unmanaged, INumb
     private static readonly MethodInfo MethodInfo_GetVariable = typeof(IEvaluationContext<T>).GetMethod(nameof(IEvaluationContext<T>.GetVariable))!;
     internal static readonly ICompiler<T> Instance = new ExpressionTreeCompiler<T>();
 
+    private static readonly Expression TrueExpression = Expression.Constant(Util<T>.BoolTrue);
+    private static readonly Expression FalseExpression = Expression.Constant(Util<T>.BoolFalse);
+
     internal ExpressionTreeCompiler() {
     }
 
@@ -56,6 +59,31 @@ public class ExpressionTreeCompiler<T> : ICompiler<T> where T : unmanaged, INumb
             case OperatorType.Multiplication: return Expression.Multiply(compiledLeft, compiledRight);
             case OperatorType.Division:       return Expression.Divide(compiledLeft, compiledRight);
             case OperatorType.Modulo:         return Expression.Modulo(compiledLeft, compiledRight);
+
+            case OperatorType.EqualTo:              return Expression.Condition(Expression.Equal(compiledLeft, compiledRight), TrueExpression, FalseExpression);
+            case OperatorType.NotEqualTo:           return Expression.Condition(Expression.NotEqual(compiledLeft, compiledRight), TrueExpression, FalseExpression);
+            case OperatorType.LessThan:             return Expression.Condition(Expression.LessThan(compiledLeft, compiledRight), TrueExpression, FalseExpression);
+            case OperatorType.LessThanOrEqualTo:    return Expression.Condition(Expression.LessThanOrEqual(compiledLeft, compiledRight), TrueExpression, FalseExpression);
+            case OperatorType.GreaterThan:          return Expression.Condition(Expression.GreaterThan(compiledLeft, compiledRight), TrueExpression, FalseExpression);
+            case OperatorType.GreaterThanOrEqualTo: return Expression.Condition(Expression.GreaterThanOrEqual(compiledLeft, compiledRight), TrueExpression, FalseExpression);
+
+            case OperatorType.ConditionalAnd:
+                return Expression.Condition(
+                    Expression.AndAlso(
+                        Expression.NotEqual(compiledLeft, FalseExpression),
+                        Expression.NotEqual(compiledRight, FalseExpression)),
+                    TrueExpression,
+                    FalseExpression
+                );
+
+            case OperatorType.ConditionalOr:
+                return Expression.Condition(
+                    Expression.OrElse(
+                        Expression.NotEqual(compiledLeft, FalseExpression),
+                        Expression.NotEqual(compiledRight, FalseExpression)),
+                    TrueExpression,
+                    FalseExpression
+                );
         }
 
         if (!Util<T>.IsFP) {

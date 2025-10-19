@@ -125,20 +125,42 @@ public class Parser<T> where T : unmanaged, INumber<T> {
 
 internal static class ParserUtils {
     public static readonly Dictionary<TokenType, (int precedence, bool right, OperatorType opType)> Operators;
-    public const int UnaryPrecedence = 7;
+    public const int UnaryPrecedence = 11;
 
     static ParserUtils() {
+        // Follows the C# operator precedence table
         Operators = new Dictionary<TokenType, (int precedence, bool right, OperatorType opType)> {
-            { TokenType.Or, (1, false, OperatorType.Or) },
-            { TokenType.Xor, (2, false, OperatorType.Xor) },
-            { TokenType.And, (3, false, OperatorType.And) },
-            { TokenType.LShift, (4, false, OperatorType.LShift) },
-            { TokenType.RShift, (4, false, OperatorType.RShift) },
-            { TokenType.Plus, (5, false, OperatorType.Plus) },
-            { TokenType.Minus, (5, false, OperatorType.Minus) },
-            { TokenType.Multiplication, (6, false, OperatorType.Multiplication) },
-            { TokenType.Division, (6, false, OperatorType.Division) },
-            { TokenType.Modulo, (6, false, OperatorType.Modulo) },
+            // Multiplicative
+            { TokenType.Multiplication, (10, false, OperatorType.Multiplication) },
+            { TokenType.Division, (10, false, OperatorType.Division) },
+            { TokenType.Modulo, (10, false, OperatorType.Modulo) },
+            
+            // Additive
+            { TokenType.Plus, (9, false, OperatorType.Plus) },
+            { TokenType.Minus, (9, false, OperatorType.Minus) },
+            
+            // Shift
+            { TokenType.LShift, (8, false, OperatorType.LShift) },
+            { TokenType.RShift, (8, false, OperatorType.RShift) },
+            
+            // Relational
+            { TokenType.LessThan, (7, false, OperatorType.LessThan) },
+            { TokenType.LessThanOrEqualTo, (7, false, OperatorType.LessThanOrEqualTo) },
+            { TokenType.GreaterThan, (7, false, OperatorType.GreaterThan) },
+            { TokenType.GreaterThanOrEqualTo, (7, false, OperatorType.GreaterThanOrEqualTo) },
+            
+            // Equality
+            { TokenType.EqualTo, (6, false, OperatorType.EqualTo) },
+            { TokenType.NotEqualTo, (6, false, OperatorType.NotEqualTo) },
+            
+            // Bitwise
+            { TokenType.And, (5, false, OperatorType.And) },
+            { TokenType.Xor, (4, false, OperatorType.Xor) },
+            { TokenType.Or, (3, false, OperatorType.Or) },
+            
+            // Conditional
+            { TokenType.ConditionalAnd, (2, false, OperatorType.ConditionalAnd) },
+            { TokenType.ConditionalOr, (1, false, OperatorType.ConditionalOr) },
         };
     }
 

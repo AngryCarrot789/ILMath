@@ -52,6 +52,19 @@ public class FunctionalCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T
             case OperatorType.Multiplication: return context => compiledLeft(context) * compiledRight(context);
             case OperatorType.Division:       return context => compiledLeft(context) / compiledRight(context);
             case OperatorType.Modulo:         return context => compiledLeft(context) % compiledRight(context);
+
+            case OperatorType.EqualTo:              return context => compiledLeft(context) == compiledRight(context) ? Util<T>.BoolTrue : Util<T>.BoolFalse;
+            case OperatorType.NotEqualTo:           return context => compiledLeft(context) != compiledRight(context) ? Util<T>.BoolTrue : Util<T>.BoolFalse;
+            case OperatorType.LessThan:             return context => compiledLeft(context) <  compiledRight(context) ? Util<T>.BoolTrue : Util<T>.BoolFalse;
+            case OperatorType.LessThanOrEqualTo:    return context => compiledLeft(context) <= compiledRight(context) ? Util<T>.BoolTrue : Util<T>.BoolFalse;
+            case OperatorType.GreaterThan:          return context => compiledLeft(context) >  compiledRight(context) ? Util<T>.BoolTrue : Util<T>.BoolFalse;
+            case OperatorType.GreaterThanOrEqualTo: return context => compiledLeft(context) >= compiledRight(context) ? Util<T>.BoolTrue : Util<T>.BoolFalse;
+            
+            case OperatorType.ConditionalAnd:
+                return context => (compiledLeft(context) != Util<T>.BoolFalse) && (compiledRight(context) != Util<T>.BoolFalse) ? Util<T>.BoolTrue : Util<T>.BoolFalse;
+
+            case OperatorType.ConditionalOr:
+                return context => (compiledLeft(context) != Util<T>.BoolFalse) || (compiledRight(context) != Util<T>.BoolFalse) ? Util<T>.BoolTrue : Util<T>.BoolFalse;
         }
 
         if (!Util<T>.IsFP) {
@@ -111,7 +124,7 @@ public class FunctionalCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T
             return Operate1<ulong>(input, static x => ~x);
         throw new EvaluationException($"Unknown type: {typeof(T)}");
     }
-    
+
     private static T Not(T input) {
         if (typeof(T) == typeof(int))
             return Operate1<int>(input, static x => x != 0 ? 0 : 1);

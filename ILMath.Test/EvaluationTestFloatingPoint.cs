@@ -101,8 +101,7 @@ public class EvaluationTestFloatingPoint {
         foreach (CompilationMethod method in Methods) {
             Evaluator<double> compiled = MathEvaluation.CompileExpression<double>(string.Empty, expression, method);
             EvaluationContext<double> context = EvaluationContexts.CreateForDouble();
-            context.RegisterFunction("f", static p => p[0] * 2);
-            
+            context.Functions["f"] = static p => p[0] * 2;
             Assert.AreEqual(expected, compiled(context), 0.00001, $"Test failed for compilation method: {method}");
         }
     }

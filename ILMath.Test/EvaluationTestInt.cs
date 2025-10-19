@@ -123,8 +123,7 @@ public class EvaluationTestInt {
         foreach (CompilationMethod method in Methods) {
             Evaluator<int> compiled = MathEvaluation.CompileExpression<int>(string.Empty, expression, new ParsingContext() { DefaultIntegerParseMode = mode }, method);
             EvaluationContext<int> context = EvaluationContexts.CreateForInteger<int>();
-            context.RegisterFunction("f", static p => p[0] * 2);
-
+            context.Functions["f"] = static p => p[0] * 2;
             Assert.AreEqual(expected, compiled(context), $"Test failed for compilation method: {method}");
         }
     }
