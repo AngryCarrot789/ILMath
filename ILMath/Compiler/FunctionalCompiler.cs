@@ -153,11 +153,11 @@ public class FunctionalCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T
         if (typeof(T) == typeof(int))
             return Operate2<int>(a, b, static (x, y) => (x << y));
         if (typeof(T) == typeof(uint))
-            return Operate2<uint>(a, b, static (x, y) => (x << (int) y));
+            return Operate2<uint>(a, b, static (x, y) => (x << (int) Math.Clamp(y, 0, int.MaxValue)));
         if (typeof(T) == typeof(long))
-            return Operate2<long>(a, b, static (x, y) => (x << (int) y));
+            return Operate2<long>(a, b, static (x, y) => (x << (int) Math.Clamp(y, int.MinValue, int.MaxValue)));
         if (typeof(T) == typeof(ulong))
-            return Operate2<ulong>(a, b, static (x, y) => (x << (int) y));
+            return Operate2<ulong>(a, b, static (x, y) => (x << (int) Math.Clamp(y, 0, int.MaxValue)));
         throw new EvaluationException($"Unknown type: {typeof(T)}");
     }
 
@@ -165,11 +165,11 @@ public class FunctionalCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T
         if (typeof(T) == typeof(int))
             return Operate2<int>(a, b, static (x, y) => (x >> y));
         if (typeof(T) == typeof(uint))
-            return Operate2<uint>(a, b, static (x, y) => (x >> (int) y));
+            return Operate2<uint>(a, b, static (x, y) => (x >> (int) Math.Clamp(y, 0, int.MaxValue)));
         if (typeof(T) == typeof(long))
-            return Operate2<long>(a, b, static (x, y) => (x >> (int) y));
+            return Operate2<long>(a, b, static (x, y) => (x >> (int) Math.Clamp(y, int.MinValue, int.MaxValue)));
         if (typeof(T) == typeof(ulong))
-            return Operate2<ulong>(a, b, static (x, y) => (x >> (int) y));
+            return Operate2<ulong>(a, b, static (x, y) => (x >> (int) Math.Clamp(y, 0, int.MaxValue)));
         throw new EvaluationException($"Unknown type: {typeof(T)}");
     }
 

@@ -59,8 +59,11 @@ public class Parser<T> where T : unmanaged, INumber<T> {
                     this.ctx.ValidateFunction?.Invoke(node);
                     return node;
                 }
-
-                return new VariableNode(name);
+                else {
+                    VariableNode node = new VariableNode(name);
+                    this.ctx.ValidateVariable?.Invoke(node);
+                    return node;   
+                }
 
             case TokenType.OpenParenthesis:
                 this.Consume(TokenType.OpenParenthesis);
