@@ -45,9 +45,4 @@ public enum IntegerParseMode {
     /// Parse token as hexadecimal
     /// </summary>
     Hexadecimal,
-
-    /// <summary>
-    /// Parse token as binary
-    /// </summary>
-    Binary
 }

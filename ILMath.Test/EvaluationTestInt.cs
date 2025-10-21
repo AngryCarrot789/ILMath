@@ -98,16 +98,12 @@ public class EvaluationTestInt {
     }
 
     [TestMethod]
-    public void TestHexAndBinaryParsing() {
+    public void TestHexParsing() {
         RunTestI32("0x0101", 0x0101);
-        RunTestI32("0b0101", 0b0101);
         RunTestI32("0X7FFFFFFF", 0X7FFFFFFF);
-        RunTestI32("0b10000000000000000000000000000000", unchecked((int) 0b10000000000000000000000000000000));
         
         RunTestI32("0101", 0x0101, IntegerParseMode.Hexadecimal);
         RunTestI32("7FFFFFFF", 0X7FFFFFFF, IntegerParseMode.Hexadecimal);
-        RunTestI32("0101", 0b0101, IntegerParseMode.Binary);
-        RunTestI32("10000000000000000000000000000000", unchecked((int) 0b10000000000000000000000000000000), IntegerParseMode.Binary);
     }
 
     [TestMethod]

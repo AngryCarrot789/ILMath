@@ -90,19 +90,22 @@ public class Parser<T> where T : unmanaged, INumber<T> {
     private T ParseLiteral(Token currentToken) {
         string value = currentToken.Value ?? throw new ParserException("Token has no value");
         if (!Util<T>.IsFP) {
-            ParserUtils.TryGetPrefix(value, out NumberStyles style, out int endOfPrefix);
+            int endOfPrefix = ParserUtils.TrimHexPrefix(value);
             if (endOfPrefix == -1 && this.ctx.DefaultIntegerParseMode == IntegerParseMode.Integer) {
                 // Token has no prefix and the parsing context says parse as normal number
                 return T.Parse(value, null);
             }
 
+            NumberStyles style;
             if (endOfPrefix == -1) {
                 // Token has no prefix but the parsing context specifies a default parsing format
-                style = this.ctx.DefaultIntegerParseMode == IntegerParseMode.Hexadecimal ? NumberStyles.HexNumber : NumberStyles.BinaryNumber;
                 endOfPrefix = 0;
+                style = this.ctx.DefaultIntegerParseMode == IntegerParseMode.Hexadecimal ? NumberStyles.HexNumber : NumberStyles.Integer;
+            }
+            else {
+                style = NumberStyles.HexNumber;
             }
 
-            Debug.Assert(style == NumberStyles.HexNumber || style == NumberStyles.BinaryNumber);
             return T.Parse(value.AsSpan(endOfPrefix), style, null);
         }
         
@@ -167,25 +170,14 @@ internal static class ParserUtils {
         };
     }
 
-    public static void TryGetPrefix(string input, out NumberStyles numberStyles, out int endOfPrefix) {
+    public static int TrimHexPrefix(string input) {
         int j, i = input.IndexOf("0x", StringComparison.OrdinalIgnoreCase);
-        if (i != -1) {
-            numberStyles = NumberStyles.HexNumber;
-            while ((j = input.IndexOf("0x", i + 2, StringComparison.OrdinalIgnoreCase)) != -1)
+        if (i == 0) {
+            while ((j = input.IndexOf("0x", i + 2, StringComparison.OrdinalIgnoreCase)) == (i + 2))
                 i = j;
-            endOfPrefix = i + 2;
-            return;
+            return i + 2;
         }
 
-        if ((i = input.IndexOf("0b", StringComparison.OrdinalIgnoreCase)) != -1) {
-            numberStyles = NumberStyles.BinaryNumber;
-            while ((j = input.IndexOf("0b", i + 2, StringComparison.OrdinalIgnoreCase)) != -1)
-                i = j;
-            endOfPrefix = i + 2;
-            return;
-        }
-
-        numberStyles = default;
-        endOfPrefix = -1;
+        return i;
     }
 }

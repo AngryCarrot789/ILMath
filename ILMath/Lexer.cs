@@ -149,7 +149,7 @@ public class Lexer {
         char ch = this.input[this.index++];
         builder.Append(ch); // append the first literal char
 
-        if (this.index < this.input.Length && ((ch = this.input[this.index]) == 'x' || ch == 'X' || ch == 'b' || ch == 'B')) {
+        if (this.index < this.input.Length && ((ch = this.input[this.index]) == 'x' || ch == 'X')) {
             // we found a hex or binary prefix, so skip over it
             builder.Append(ch);
             this.index++;
