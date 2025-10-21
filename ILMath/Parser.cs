@@ -54,7 +54,10 @@ public class Parser<T> where T : unmanaged, INumber<T> {
                     this.Consume(TokenType.OpenParenthesis);
                     List<INode> args = this.ParseParameters().ToList();
                     this.Consume(TokenType.CloseParenthesis);
-                    return new FunctionNode(name, args);
+
+                    FunctionNode node = new FunctionNode(name, args);
+                    this.ctx.ValidateFunction?.Invoke(node);
+                    return node;
                 }
 
                 return new VariableNode(name);

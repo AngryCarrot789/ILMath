@@ -68,6 +68,7 @@ public class EvaluationTestInt {
         RunTestI32("4 * 2 | 1", 4 * 2 | 1);
         RunTestI32("16 >> 2 + 1", 16 >> 2 + 1);
         RunTestI32("(16 >> 2) + 1", (16 >> 2) + 1);
+        RunTestI32("5 * ~10 ^ 5 / +15 & 0x7 + 20", 5 * ~10 ^ 5 / +15 & 0x7 + 20);
     }
 
     [TestMethod]
@@ -123,7 +124,7 @@ public class EvaluationTestInt {
         foreach (CompilationMethod method in Methods) {
             Evaluator<int> compiled = MathEvaluation.CompileExpression<int>(string.Empty, expression, new ParsingContext() { DefaultIntegerParseMode = mode }, method);
             EvaluationContext<int> context = EvaluationContexts.CreateForInteger<int>();
-            context.Functions["f"] = static p => p[0] * 2;
+            context.SetFunction("f", 1, static p => p[0] * 2);
             Assert.AreEqual(expected, compiled(context), $"Test failed for compilation method: {method}");
         }
     }

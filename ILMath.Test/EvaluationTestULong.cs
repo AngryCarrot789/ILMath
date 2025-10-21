@@ -110,8 +110,7 @@ public class EvaluationTestULong {
         foreach (CompilationMethod method in Methods) {
             Evaluator<ulong> compiled = MathEvaluation.CompileExpression<ulong>(string.Empty, expression, method);
             EvaluationContext<ulong> context = EvaluationContexts.CreateForInteger<ulong>();
-            context.Functions["f"] = static p => p[0] * 2;
-
+            context.SetFunction("f", 1, static p => p[0] * 2);
             Assert.AreEqual(expected, compiled(context), $"Test failed for compilation method: {method}");
         }
     }

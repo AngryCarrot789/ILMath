@@ -6,7 +6,24 @@ namespace ILMath;
 /// <summary>
 /// Provides context for evaluating a compiled expression.
 /// </summary>
+/// <typeparam name="T">The evaluation value type</typeparam>
 public interface IEvaluationContext<T> where T : unmanaged, INumber<T> {
+    /// <summary>
+    /// Tries to get a variable with the given name
+    /// </summary>
+    /// <param name="identifier">The variable's identifier.</param>
+    /// <param name="variable">The variable</param>
+    /// <returns>True if the variable was found</returns>
+    public bool TryGetVariable(string identifier, out T variable);
+    
+    /// <summary>
+    /// Tries to get a function with the given name
+    /// </summary>
+    /// <param name="identifier">The function's identifier.</param>
+    /// <param name="declaration">The function declaration</param>
+    /// <returns>True if the function was found</returns>
+    public bool TryGetFunction(string identifier, out FunctionDeclaration<T> declaration);
+    
     /// <summary>
     /// Gets the value of a variable.
     /// </summary>

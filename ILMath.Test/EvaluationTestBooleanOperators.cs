@@ -27,8 +27,7 @@ public class EvaluationTestBooleanOperators {
          *     std::cout << "[(!~0)]      "<< (!~0)      << " should equal " << 0 << "\n";
          *     std::cout << "[(!!0)]      "<< (!!0)      << " should equal " << 0 << "\n";
          */
-
-
+        
         RunTestI32("0", 0);
         RunTestI32("5", 5);
         RunTestI32("!0", 1);
@@ -136,8 +135,7 @@ public class EvaluationTestBooleanOperators {
         foreach (CompilationMethod method in Methods) {
             Evaluator<int> compiled = MathEvaluation.CompileExpression<int>(string.Empty, expression, method);
             EvaluationContext<int> context = EvaluationContexts.CreateForInteger<int>();
-            context.Functions["f"] = static p => p[0] * 2;
-
+            context.SetFunction("f", 1, static p => p[0] * 2);
             Assert.AreEqual(expected, compiled(context), $"Test failed for compilation method: {method}");
         }
     }
