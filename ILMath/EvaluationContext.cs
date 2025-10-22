@@ -149,6 +149,10 @@ public abstract class EvaluationContext<T> : IEvaluationContext<T> where T : unm
             return true;
         return false;
     }
+
+    internal static double Deg2Rad(double deg) => deg * Math.PI / 180;
+    
+    internal static double Rad2Deg(double rad) => rad * 180 / Math.PI;
 }
 
 public static class EvaluationContexts {
@@ -176,8 +180,10 @@ public sealed class EvaluationContextDouble : EvaluationContext<double> {
         SetGlobalVariable("phi", (1.0 + Math.Sqrt(5.0)) / 2.0);
         SetGlobalVariable("inf", double.PositiveInfinity);
         SetGlobalVariable("nan", double.NaN);
-        SetGlobalVariable("degToRad", Math.PI / 180.0);
-        SetGlobalVariable("radToDeg", 180.0 / Math.PI);
+        SetGlobalVariable("deg2rad", Math.PI / 180.0);
+        SetGlobalVariable("rad2deg", 180.0 / Math.PI);
+        SetGlobalFunction("deg2rad", 1, static p => Deg2Rad(p[0]));
+        SetGlobalFunction("rad2deg", 1, static p => Rad2Deg(p[0]));
         SetGlobalFunction("sin", 1, static p => Math.Sin(p[0]));
         SetGlobalFunction("cos", 1, static p => Math.Cos(p[0]));
         SetGlobalFunction("tan", 1, static p => Math.Tan(p[0]));
@@ -222,8 +228,10 @@ public sealed class EvaluationContextFloat : EvaluationContext<float> {
         SetGlobalVariable("phi", (float) ((1.0 + Math.Sqrt(5.0)) / 2.0));
         SetGlobalVariable("inf", (float) (double.PositiveInfinity));
         SetGlobalVariable("nan", (float) (double.NaN));
-        SetGlobalVariable("degToRad", (float) (Math.PI / 180.0));
-        SetGlobalVariable("radToDeg", (float) (180.0 / Math.PI));
+        SetGlobalVariable("deg2rad", (float) (Math.PI / 180.0));
+        SetGlobalVariable("rad2deg", (float) (180.0 / Math.PI));
+        SetGlobalFunction("deg2rad", 1, static p => (float) Deg2Rad(p[0]));
+        SetGlobalFunction("rad2deg", 1, static p => (float) Rad2Deg(p[0]));
         SetGlobalFunction("sin", 1, static p => (float) Math.Sin(p[0]));
         SetGlobalFunction("cos", 1, static p => (float) Math.Cos(p[0]));
         SetGlobalFunction("tan", 1, static p => (float) Math.Tan(p[0]));
