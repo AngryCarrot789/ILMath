@@ -69,7 +69,7 @@ public class IlCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T> {
     private static void CompileNode(INode node, ILGenerator il, CompilationState state) {
         switch (node) {
             case OperatorNode expressionNode: CompileOperatorNode(expressionNode, il, state); break;
-            case LiteralNode<T> numberNode:   CompileNumberNode(numberNode, il); break;
+            case LiteralNode<T> numberNode:   CompileNumberNode(il, numberNode); break;
             case UnaryNode unaryNode:         CompileUnaryNode(unaryNode, il, state); break;
             case VariableNode variableNode:   CompileVariableNode(variableNode, il); break;
             case FunctionNode functionNode:   CompileFunctionNode(functionNode, il, state); break;
@@ -84,13 +84,13 @@ public class IlCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T> {
 
         if (op == OperatorType.ConditionalAnd || op == OperatorType.ConditionalOr) {
             CompileNode(left, il, state);
-            il.Emit(OpCodes.Ldc_I4_0);
+            EmitLoadZero(il);
             il.Emit(OpCodes.Ceq);
             il.Emit(OpCodes.Ldc_I4_0);
             il.Emit(OpCodes.Ceq);
 
             CompileNode(right, il, state);
-            il.Emit(OpCodes.Ldc_I4_0);
+            EmitLoadZero(il);
             il.Emit(OpCodes.Ceq);
             il.Emit(OpCodes.Ldc_I4_0);
             il.Emit(OpCodes.Ceq);
@@ -123,8 +123,9 @@ public class IlCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T> {
         Util<T>.EmitI4ToTypeT(il);
     }
 
-    private static void CompileNumberNode(LiteralNode<T> literalNode, ILGenerator il) {
-        T value = literalNode.Value;
+    private static void CompileNumberNode(ILGenerator il, LiteralNode<T> n) => EmitLoad(il, n.Value);
+
+    private static void EmitLoad(ILGenerator il, T value) {
         if (typeof(T) == typeof(int))
             il.Emit(OpCodes.Ldc_I4, Unsafe.As<T, int>(ref value));
         else if (typeof(T) == typeof(uint))
@@ -137,6 +138,17 @@ public class IlCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T> {
             il.Emit(OpCodes.Ldc_R4, Unsafe.As<T, float>(ref value));
         else if (typeof(T) == typeof(double))
             il.Emit(OpCodes.Ldc_R8, Unsafe.As<T, double>(ref value));
+    }
+    
+    private static void EmitLoadZero(ILGenerator il) {
+        if (typeof(T) == typeof(int) || typeof(T) == typeof(uint))
+            il.Emit(OpCodes.Ldc_I4_0);
+        else if (typeof(T) == typeof(long) || typeof(T) == typeof(ulong))
+            il.Emit(OpCodes.Ldc_I8, (long) 0);
+        else if (typeof(T) == typeof(float))
+            il.Emit(OpCodes.Ldc_R4, 0.0F);
+        else if (typeof(T) == typeof(double))
+            il.Emit(OpCodes.Ldc_R8, 0.0D);
     }
 
     private static void CompileUnaryNode(UnaryNode unaryNode, ILGenerator il, CompilationState state) {
