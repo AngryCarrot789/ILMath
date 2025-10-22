@@ -96,7 +96,7 @@ public class ExpressionTreeCompiler<T> : ICompiler<T> where T : unmanaged, INumb
             }
         }
 
-        throw new CompilerException($"Unknown operator: {@operator}");
+        throw new CompilerException($"Unexpected operator '{@operator.ToToken()}'");
     }
 
     private static Expression CompileNumberNode(LiteralNode<T> literalNode, ParameterExpression _) {

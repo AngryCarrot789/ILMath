@@ -77,7 +77,7 @@ public class FunctionalCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T
             }
         }
 
-        throw new CompilerException($"Unknown operator: {@operator}");
+        throw new CompilerException($"Unexpected operator '{@operator.ToToken()}'");
     }
 
     private static Evaluator<T> CompileNumberNode(LiteralNode<T> literalNode) {

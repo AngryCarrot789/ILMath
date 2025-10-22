@@ -251,7 +251,7 @@ public class IlCompiler<T> : ICompiler<T> where T : unmanaged, INumber<T> {
             }
         }
 
-        throw new CompilerException($"Unknown operator type '{operatorType}' for {nameof(OperatorNode)}");
+        throw new CompilerException($"Unexpected operator '{operatorType.ToToken()}'");
     }
 
     private static void CalculateMaximumParameterStackSize(INode node, int stackLocation, ref int maximumStackSize, ref ChildNodeList list) {

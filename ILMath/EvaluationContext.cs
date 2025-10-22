@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Data;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using ILMath.Exception;
 
@@ -199,9 +200,14 @@ public sealed class EvaluationContextDouble : EvaluationContext<double> {
         SetGlobalFunction("floor", 1, static p => Math.Floor(p[0]));
         SetGlobalFunction("ceil", 1, static p => Math.Ceiling(p[0]));
         SetGlobalFunction("round", 1, 2, static p => p.Length == 1 ? Math.Round(p[0]) : Math.Round(p[0], Math.Clamp((int) p[1], 0, 15)));
-        SetGlobalFunction("rand", 1, 2, static p => p.Length == 1
-            ? Random.Shared.NextDouble() * p[1]
-            : Random.Shared.NextDouble() * (p[1] - p[0]) + p[0]);
+        SetGlobalFunction("rand", 0, 2, static p => {
+            switch (p.Length) {
+                case 0: /* 0 to 1 */ return Random.Shared.NextDouble();
+                case 1: /* 0 to x */ return Random.Shared.NextDouble() * p[0];
+                case 2: /* x to y */ return Random.Shared.NextDouble() * (p[1] - p[0]) + p[0];
+                default:             throw new EvaluateException("Invalid arg count to 'rand': " + p.Length);
+            }
+        });
     }
 }
 
@@ -240,9 +246,14 @@ public sealed class EvaluationContextFloat : EvaluationContext<float> {
         SetGlobalFunction("floor", 1, static p => (float) Math.Floor(p[0]));
         SetGlobalFunction("ceil", 1, static p => (float) Math.Ceiling(p[0]));
         SetGlobalFunction("round", 1, 2, static p => (float) (p.Length == 1 ? Math.Round(p[0]) : Math.Round(p[0], Math.Clamp((int) p[1], 0, 15))));
-        SetGlobalFunction("rand", 1, 2, static p => (float) (p.Length == 1
-            ? Random.Shared.NextDouble() * p[1]
-            : Random.Shared.NextDouble() * (p[1] - p[0]) + p[0]));
+        SetGlobalFunction("rand", 0, 2, static p => {
+            switch (p.Length) {
+                case 0: /* 0 to 1 */ return (float) Random.Shared.NextDouble();
+                case 1: /* 0 to x */ return (float) Random.Shared.NextDouble() * p[0];
+                case 2: /* x to y */ return (float) Random.Shared.NextDouble() * (p[1] - p[0]) + p[0];
+                default:             throw new EvaluateException("Invalid arg count to 'rand': " + p.Length);
+            }
+        });
     }
 }
 
@@ -252,36 +263,66 @@ public sealed class EvaluationContextBinaryNumber<T> : EvaluationContext<T> wher
 
     static EvaluationContextBinaryNumber() {
         SetGlobalFunction("log2", 1, static p => T.Log2(p[0]));
-        SetGlobalFunction("rand", 1, 2, static p => p.Length == 1 ? RandomInclusive(T.Zero, p[0]) : RandomInclusive(p[0], p[1]));
+        SetGlobalFunction("rand", 0, 2, static p => {
+            switch (p.Length) {
+                case 0: /* 0 to 1 */ return RandomValue();
+                case 1: /* 0 to x */ return RandomInclusive(p[0]);
+                case 2: /* x to y */ return RandomInclusive(p[0], p[1]);
+                default:             throw new EvaluateException("Invalid arg count to 'rand': " + p.Length);
+            }
+        });
     }
+
+    private static T RandomValue() {
+        if (typeof(T) == typeof(int)) {
+            long result = Random.Shared.NextInt64(0, int.MaxValue + 1L);
+            int value = (int) result;
+            return Unsafe.As<int, T>(ref value);
+        }
+        else if (typeof(T) == typeof(uint)) {
+            uint result = (uint) (ulong) Random.Shared.NextInt64(0, uint.MaxValue + 1L);
+            return Unsafe.As<uint, T>(ref result);
+        }
+        else if (typeof(T) == typeof(long)) {
+            long result = Random.Shared.NextInt64();
+            return Unsafe.As<long, T>(ref result);
+        }
+        else if (typeof(T) == typeof(ulong)) {
+            ulong result = (ulong) Random.Shared.NextInt64();
+            return Unsafe.As<ulong, T>(ref result);
+        }
+
+        throw new InvalidOperationException($"Unsupported type: {typeof(T)}");
+    }
+
+    private static T RandomInclusive(T max) => RandomInclusive(T.Zero, max);
 
     private static T RandomInclusive(T min, T max) {
         if (min > max) {
             (min, max) = (max, min);
         }
-        
+
         if (typeof(T) == typeof(int)) {
-            long result = Random.Shared.NextInt64(Unsafe.As<T, int>(ref min), (long) Unsafe.As<T, int>(ref max) + 1);
+            long result = Random.Shared.NextInt64(Unsafe.As<T, int>(ref min), Unsafe.As<T, int>(ref max) + 1L);
             int value = (int) result;
             return Unsafe.As<int, T>(ref value);
         }
         else if (typeof(T) == typeof(uint)) {
-            ulong result = (ulong) Random.Shared.NextInt64(Unsafe.As<T, uint>(ref min), (long) Unsafe.As<T, uint>(ref max) + 1);
-            uint value = (uint) result;
-            return Unsafe.As<uint, T>(ref value);
+            uint result = (uint) (ulong) Random.Shared.NextInt64(Unsafe.As<T, uint>(ref min), Unsafe.As<T, uint>(ref max) + 1L);
+            return Unsafe.As<uint, T>(ref result);
         }
         else if (typeof(T) == typeof(long)) {
             long max64 = Unsafe.As<T, long>(ref max);
-            long value = Random.Shared.NextInt64(Unsafe.As<T, long>(ref min), max64 == long.MaxValue ? max64 : max64 + 1);
-            return Unsafe.As<long, T>(ref value);
+            long result = Random.Shared.NextInt64(Unsafe.As<T, long>(ref min), max64 == long.MaxValue ? max64 : max64 + 1L);
+            return Unsafe.As<long, T>(ref result);
         }
         else if (typeof(T) == typeof(ulong)) {
             ulong max64 = Unsafe.As<T, ulong>(ref max);
             ulong value = (ulong) Random.Shared.NextInt64(
                 (long) Math.Min(Unsafe.As<T, ulong>(ref min), long.MaxValue),
-                (long) Math.Min(max64 == ulong.MaxValue ? max64 : (max64 + 1), long.MaxValue)
+                (long) Math.Min(max64 == ulong.MaxValue ? max64 : (max64 + 1L), long.MaxValue)
             );
-            
+
             return Unsafe.As<ulong, T>(ref value);
         }
 
