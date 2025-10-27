@@ -45,7 +45,7 @@ public class Parser<T> where T : unmanaged, INumber<T> {
             case TokenType.Literal:
                 this.Consume(TokenType.Literal);
                 Debug.Assert(currentToken.Value != null);
-                return new LiteralNode<T>(this.ParseLiteral(currentToken));
+                return new LiteralNode<T>(ParseLiteral(currentToken));
 
             case TokenType.Identifier:
                 string name = currentToken.Value!;
@@ -90,26 +90,18 @@ public class Parser<T> where T : unmanaged, INumber<T> {
         }
     }
 
-    private T ParseLiteral(Token currentToken) {
+    private static T ParseLiteral(Token currentToken) {
         string value = currentToken.Value ?? throw new ParserException("Token has no value");
         if (!Util<T>.IsFP) {
-            int endOfPrefix = ParserUtils.TrimHexPrefix(value);
-            if (endOfPrefix == -1 && this.ctx.DefaultIntegerParseMode == IntegerParseMode.Integer) {
+            if (!value.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) {
                 // Token has no prefix and the parsing context says parse as normal number
                 return T.Parse(value, null);
             }
 
-            NumberStyles style;
-            if (endOfPrefix == -1) {
-                // Token has no prefix but the parsing context specifies a default parsing format
-                endOfPrefix = 0;
-                style = this.ctx.DefaultIntegerParseMode == IntegerParseMode.Hexadecimal ? NumberStyles.HexNumber : NumberStyles.Integer;
-            }
-            else {
-                style = NumberStyles.HexNumber;
-            }
+            if (value.Length == 2)
+                throw new FormatException("Literal contains only the hex prefix and no numeric value");
 
-            return T.Parse(value.AsSpan(endOfPrefix), style, null);
+            return T.Parse(value.AsSpan(2), NumberStyles.HexNumber, null);
         }
         
         return T.Parse(value, null);
@@ -171,16 +163,5 @@ internal static class ParserUtils {
             { TokenType.ConditionalAnd, (2, false, OperatorType.ConditionalAnd) },
             { TokenType.ConditionalOr, (1, false, OperatorType.ConditionalOr) },
         };
-    }
-
-    public static int TrimHexPrefix(string input) {
-        int j, i = input.IndexOf("0x", StringComparison.OrdinalIgnoreCase);
-        if (i == 0) {
-            while ((j = input.IndexOf("0x", i + 2, StringComparison.OrdinalIgnoreCase)) == (i + 2))
-                i = j;
-            return i + 2;
-        }
-
-        return i;
     }
 }

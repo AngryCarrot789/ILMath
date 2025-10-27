@@ -21,7 +21,7 @@ public class Lexer {
         this.ctx = parsingContext;
         this.Consume(TokenType.None);
     }
-
+    
     /// <summary>
     /// Consumes the current token and sets <see cref="CurrentToken"/> to the next token.
     /// </summary>
@@ -119,8 +119,9 @@ public class Lexer {
     private Token NextNonSymbolToken() {
         char currentChar = this.input[this.index];
 
-        // If it is a literal, read the whole number
-        if (this.CanParseNextLiteralFromChar(currentChar))
+        // If it is a literal, read the whole number. Also includes when
+        // a hex prefix is specified, since it starts with '0'.
+        if (char.IsDigit(currentChar))
             return this.NextLiteral();
 
         // If it is a letter, read the whole identifier
@@ -145,25 +146,28 @@ public class Lexer {
     }
 
     private Token NextLiteral() {
+        bool isHex = false;
+        
         StringBuilder builder = new StringBuilder();
         char ch = this.input[this.index++];
         builder.Append(ch); // append the first literal char
 
+        // Check if next char is the 2nd char of the hex prefix specifier. If so, add it
         if (this.index < this.input.Length && ((ch = this.input[this.index]) == 'x' || ch == 'X')) {
-            // we found a hex or binary prefix, so skip over it
             builder.Append(ch);
             this.index++;
+            isHex = true;
         }
 
-        // Read the whole number
-        while (this.index < this.input.Length && ((ch = this.input[this.index]) == '_' || char.IsDigit(ch) || IsHexChar(ch))) {
+        // Read the rest of the number or hex value. We use IsAsciiHexDigit because it includes 0-9 too
+        while (this.index < this.input.Length && ((ch = this.input[this.index]) == '_' || char.IsAsciiHexDigit(ch))) {
             if (ch != '_') // allow separating sections of number with underscore
                 builder.Append(ch);
             this.index++;
         }
 
-        // If we found a dot, read the decimal part. If we encounter hex chars, then the parse will fail later on
-        if (this.index < this.input.Length && (ch = this.input[this.index]) == '.') {
+        // Check for dot. Also check there's enough chars for dot and at least one decimal number
+        if ((this.index + 1) < this.input.Length && (ch = this.input[this.index]) == '.' && !isHex) {
             builder.Append(ch);
             this.index++;
 
@@ -176,16 +180,6 @@ public class Lexer {
         return new Token(TokenType.Literal, builder.ToString());
     }
 
-    // Do not use for checking if a char is valid for a number,
-    // only use for checking if the next char can be the start of a literal
-    private bool CanParseNextLiteralFromChar(char ch) {
-        if (char.IsDigit(ch))
-            return true;
-        if (this.ctx.DefaultIntegerParseMode == IntegerParseMode.Hexadecimal)
-            return IsHexChar(ch);
-        return false;
-    }
-
     private static bool IsIdentifierChar(char ch) {
         switch (ch) {
             case '_':
@@ -196,6 +190,4 @@ public class Lexer {
             default: return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || char.IsDigit(ch);
         }
     }
-
-    private static bool IsHexChar(char ch) => (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
 }
