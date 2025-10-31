@@ -21,7 +21,7 @@ public class Lexer {
         this.ctx = parsingContext;
         this.Consume(TokenType.None);
     }
-    
+
     /// <summary>
     /// Consumes the current token and sets <see cref="CurrentToken"/> to the next token.
     /// </summary>
@@ -80,7 +80,7 @@ public class Lexer {
             this.index++;
             return new Token(tokenType);
         }
-        
+
         return new Token(TokenType.Unknown);
     }
 
@@ -119,10 +119,16 @@ public class Lexer {
     private Token NextNonSymbolToken() {
         char currentChar = this.input[this.index];
 
-        // If it is a literal, read the whole number. Also includes when
-        // a hex prefix is specified, since it starts with '0'.
-        if (char.IsDigit(currentChar))
-            return this.NextLiteral();
+        // If it is a literal, read the whole number
+        if (this.CanParseNextLiteralFromChar(currentChar)) {
+            string text = this.NextLiteralText();
+            Predicate<string>? predicate = this.ctx.IsIdentifierPredicate;
+            if (predicate != null && text.All(IsIdentifierChar) && predicate(text)) {
+                return new Token(TokenType.Identifier, text);
+            }
+
+            return new Token(TokenType.Literal, text);
+        }
 
         // If it is a letter, read the whole identifier
         if (IsIdentifierChar(currentChar))
@@ -145,9 +151,9 @@ public class Lexer {
         return new Token(TokenType.Identifier, builder.ToString());
     }
 
-    private Token NextLiteral() {
+    private string NextLiteralText() {
         bool isHex = false;
-        
+
         StringBuilder builder = new StringBuilder();
         char ch = this.input[this.index++];
         builder.Append(ch); // append the first literal char
@@ -177,7 +183,7 @@ public class Lexer {
             }
         }
 
-        return new Token(TokenType.Literal, builder.ToString());
+        return builder.ToString();
     }
 
     private static bool IsIdentifierChar(char ch) {
@@ -189,5 +195,13 @@ public class Lexer {
                 return true;
             default: return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || char.IsDigit(ch);
         }
+    }
+
+    private bool CanParseNextLiteralFromChar(char ch) {
+        if (char.IsDigit(ch))
+            return true;
+        if (this.ctx.DefaultIntegerParseMode == IntegerParseMode.Hexadecimal)
+            return char.IsAsciiHexDigit(ch);
+        return false;
     }
 }

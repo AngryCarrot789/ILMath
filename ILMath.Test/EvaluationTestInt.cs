@@ -101,6 +101,12 @@ public class EvaluationTestInt {
     public void TestHexParsing() {
         RunTestI32("0x0101", 0x0101);
         RunTestI32("0X7FFFFFFF", 0X7FFFFFFF);
+
+        RunTestI32("0101", 0x0101, IntegerParseMode.Hexadecimal);
+        RunTestI32("7FFFFFFF", 0X7FFFFFFF, IntegerParseMode.Hexadecimal);
+
+        RunTestI32("0101 + f(0101)", 0x0101 + (0x0101 * 2), IntegerParseMode.Hexadecimal);
+        RunTestI32("7FFFFFFF - f(7F00)", 0x7FFFFFFF - (0x7F00 * 2), IntegerParseMode.Hexadecimal);
     }
 
     [TestMethod]
@@ -114,9 +120,12 @@ public class EvaluationTestInt {
         CompilationMethod.ExpressionTree, CompilationMethod.Functional, CompilationMethod.IntermediateLanguage
     };
 
-    private static void RunTestI32(string expression, int expected) {
+    private static void RunTestI32(string expression, int expected, IntegerParseMode mode = IntegerParseMode.Integer) {
         foreach (CompilationMethod method in Methods) {
-            Evaluator<int> compiled = MathEvaluation.CompileExpression<int>(string.Empty, expression, new ParsingContext(), method);
+            Evaluator<int> compiled = MathEvaluation.CompileExpression<int>(string.Empty, expression, new ParsingContext() {
+                DefaultIntegerParseMode = mode,
+                IsIdentifierPredicate = (x) => x == "f"
+            }, method);
             EvaluationContext<int> context = EvaluationContexts.CreateForInteger<int>();
             context.SetFunction("f", 1, static p => p[0] * 2);
             Assert.AreEqual(expected, compiled(context), $"Test failed for compilation method: {method}");

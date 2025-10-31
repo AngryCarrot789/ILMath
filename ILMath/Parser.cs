@@ -90,18 +90,20 @@ public class Parser<T> where T : unmanaged, INumber<T> {
         }
     }
 
-    private static T ParseLiteral(Token currentToken) {
+    private T ParseLiteral(Token currentToken) {
         string value = currentToken.Value ?? throw new ParserException("Token has no value");
         if (!Util<T>.IsFP) {
-            if (!value.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) {
+            bool hexPrefixed = value.StartsWith("0x", StringComparison.OrdinalIgnoreCase);
+            bool intByDefault = this.ctx.DefaultIntegerParseMode == IntegerParseMode.Integer;
+            if (!hexPrefixed && intByDefault) {
                 // Token has no prefix and the parsing context says parse as normal number
                 return T.Parse(value, null);
             }
 
-            if (value.Length == 2)
+            if (hexPrefixed && value.Length == 2)
                 throw new FormatException("Literal contains only the hex prefix and no numeric value");
 
-            return T.Parse(value.AsSpan(2), NumberStyles.HexNumber, null);
+            return T.Parse(value.AsSpan(hexPrefixed ? 2 : 0), NumberStyles.HexNumber, null);
         }
         
         return T.Parse(value, null);
