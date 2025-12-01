@@ -50,6 +50,8 @@ public static class OperatorTypeExtensions {
             case OperatorType.LessThanOrEqualTo:    return "<=";
             case OperatorType.GreaterThan:          return ">";
             case OperatorType.GreaterThanOrEqualTo: return ">=";
+            case OperatorType.ConditionalAnd:       return "&&";
+            case OperatorType.ConditionalOr:        return "||";
             default:                                throw new ArgumentOutOfRangeException(nameof(opType), opType, null);
         }
     }
