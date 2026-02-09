@@ -1,6 +1,7 @@
 ﻿using System.Data;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using ILMath.Compiler;
 using ILMath.Exception;
 
 namespace ILMath;
@@ -21,6 +22,15 @@ public abstract class EvaluationContext<T> : IEvaluationContext<T> where T : unm
     static EvaluationContext() {
         SetGlobalFunction("mod", 2, static p => p[0] % p[1]);
         SetGlobalFunction("abs", 1, static p => T.Abs(p[0]));
+        SetGlobalFunction("equals", 2, 3, static p => {
+            if (p[1] == Util<T>.Zero)
+                return Util<T>.BoolTrue;
+
+            T epsilon = p.Length == 3 ? p[2] : Util<T>.DefaultEpsilon;
+            return T.Abs(p[0] - p[1]) < epsilon 
+                ? Util<T>.BoolTrue 
+                : Util<T>.BoolFalse;
+        });
         SetGlobalFunction("min", Min);
         SetGlobalFunction("max", Max);
         SetGlobalFunction("sum", Sum);

@@ -7,8 +7,11 @@ namespace ILMath.Compiler;
 
 [SuppressMessage("ReSharper", "StaticMemberInGenericType", Justification = $"We use the {nameof(Util<T>)}<T> class for storing type-specific information")]
 public static class Util<T> where T : INumber<T> {
-    public static readonly T BoolTrue = T.CreateChecked(1);
-    public static readonly T BoolFalse = T.CreateChecked(0);
+    public static readonly T Zero = T.CreateChecked(0);
+    public static readonly T One = T.CreateChecked(1);
+    public static readonly T BoolFalse = Zero;
+    public static readonly T BoolTrue = One;
+    public static readonly T DefaultEpsilon = T.CreateChecked(0.000001);
 
     public static bool IsFP { get; }
     public static bool IsUN { get; }
